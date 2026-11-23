@@ -1,8 +1,10 @@
 //! Parsing individual CSS property values.
 
+use unicode_width::UnicodeWidthChar;
+
 use super::color::parse_color;
 use super::parse::split_top_level;
-use super::{Edges, Length, ListStyleType};
+use super::{AutoMargin, BorderSide, BorderStyle, Edges, Length, ListStyleType, Pattern, Shadow};
 use crate::palette::Ega;
 
 /// A case-insensitive keyword lookup.
@@ -46,25 +48,48 @@ pub(super) fn length(value: &str) -> Option<Option<Length>> {
     cells(value).map(|n| Some(Length::Cells(n)))
 }
 
-/// The `margin`/`padding` shorthand: 1 to 4 values, clockwise from the top.
-pub(super) fn edges(value: &str) -> Option<Edges> {
+/// 1 to 4 values, clockwise from the top, the way CSS shorthands spell them.
+pub(super) fn four<T: Copy>(value: &str, parse: impl Fn(&str) -> Option<T>) -> Option<[T; 4]> {
     let parts = split_top_level(value, ' ')
         .into_iter()
-        .map(cells)
+        .map(parse)
         .collect::<Option<Vec<_>>>()?;
-    let (top, right, bottom, left) = match parts[..] {
-        [all] => (all, all, all, all),
-        [vertical, horizontal] => (vertical, horizontal, vertical, horizontal),
-        [top, horizontal, bottom] => (top, horizontal, bottom, horizontal),
-        [top, right, bottom, left] => (top, right, bottom, left),
+    Some(match parts[..] {
+        [all] => [all, all, all, all],
+        [vertical, horizontal] => [vertical, horizontal, vertical, horizontal],
+        [top, horizontal, bottom] => [top, horizontal, bottom, horizontal],
+        [top, right, bottom, left] => [top, right, bottom, left],
         _ => return None,
-    };
-    Some(Edges {
-        top,
-        right,
-        bottom,
-        left,
     })
+}
+
+/// The `padding` shorthand.
+pub(super) fn edges(value: &str) -> Option<Edges> {
+    four(value, cells).map(Edges::from)
+}
+
+/// One margin: cells, or `auto` (`Some(None)`).
+pub(super) fn margin(value: &str) -> Option<Option<i32>> {
+    if value.trim().eq_ignore_ascii_case("auto") {
+        return Some(None);
+    }
+    cells(value).map(Some)
+}
+
+/// The `margin` shorthand. Vertical `auto` margins are 0, as in CSS block flow.
+pub(super) fn margins(value: &str) -> Option<(Edges, AutoMargin)> {
+    let [top, right, bottom, left] = four(value, margin)?;
+    let edges = Edges::from([top, right, bottom, left].map(|m| m.unwrap_or(0)));
+    let auto = AutoMargin {
+        left: left.is_none(),
+        right: right.is_none(),
+    };
+    Some((edges, auto))
+}
+
+/// `height`: cells, or `auto` (`Some(None)`).
+pub(super) fn height(value: &str) -> Option<Option<i32>> {
+    margin(value)
 }
 
 /// `background`: a color, or `transparent`/`none` (`Some(None)`).
@@ -136,6 +161,159 @@ pub(super) fn list_style_type(value: &str) -> Option<ListStyleType> {
         7 => ListStyleType::LowerRoman,
         _ => ListStyleType::UpperRoman,
     })
+}
+
+pub(super) fn border_style(value: &str) -> Option<BorderStyle> {
+    keyword(
+        value,
+        &[
+            ("none", BorderStyle::None),
+            ("hidden", BorderStyle::None),
+            ("single", BorderStyle::Single),
+            ("solid", BorderStyle::Single),
+            ("double", BorderStyle::Double),
+            ("thick", BorderStyle::Thick),
+        ],
+    )
+}
+
+/// A border width. Text borders are always one cell, so this only tells
+/// whether there is one: `0` is none, anything else (`1`, `thin`, `1px`) is one.
+fn border_width(value: &str) -> Option<bool> {
+    if keyword(value, &[("thin", ()), ("medium", ())]).is_some() {
+        return Some(true);
+    }
+    let value = value.trim().to_ascii_lowercase();
+    let unit_start = value
+        .find(|c: char| c.is_ascii_alphabetic())
+        .unwrap_or(value.len());
+    let (number, unit) = value.split_at(unit_start);
+    let number: f32 = number.parse().ok()?;
+    matches!(unit, "" | "px" | "ch" | "em" | "rem").then_some(number > 0.0)
+}
+
+/// The `border` shorthand (and `border-top`, …): a style, a color and a
+/// width in any order. Like CSS, a border without a style is not drawn.
+pub(super) fn border(value: &str) -> Option<BorderSide> {
+    let (mut style, mut color, mut visible) = (None, None, true);
+    for part in split_top_level(value, ' ') {
+        if let Some(s) = border_style(part) {
+            if style.replace(s).is_some() {
+                return None;
+            }
+        } else if let Some(c) = parse_color(part) {
+            if color.replace(c).is_some() {
+                return None;
+            }
+        } else {
+            visible &= border_width(part)?;
+        }
+    }
+    let style = style.filter(|_| visible).unwrap_or_default();
+    Some(BorderSide { style, color })
+}
+
+/// `box-shadow`: `none`, or a right and down offset in cells and an
+/// optional color (black by default).
+pub(super) fn shadow(value: &str) -> Option<Option<Shadow>> {
+    if keyword(value, &[("none", ())]).is_some() {
+        return Some(None);
+    }
+    let mut offsets = Vec::new();
+    let mut color = None;
+    for part in split_top_level(value, ' ') {
+        if let Some(n) = cells(part) {
+            offsets.push(n);
+        } else if color.replace(parse_color(part)?).is_some() {
+            return None;
+        }
+    }
+    let [x, y] = offsets[..] else { return None };
+    Some(Some(Shadow {
+        x,
+        y,
+        color: color.unwrap_or(Ega::Black),
+    }))
+}
+
+/// `--fill`: `none`, or a character (`"▒"`, `▒`, or `light`/`medium`/`dark`
+/// for `░▒▓`) and an optional color.
+pub(super) fn pattern(value: &str) -> Option<Option<Pattern>> {
+    let parts = split_top_level(value, ' ');
+    let (symbol, color) = match parts[..] {
+        [symbol] => (symbol, None),
+        [symbol, color] => (symbol, Some(parse_color(color)?)),
+        _ => return None,
+    };
+    if symbol.eq_ignore_ascii_case("none") && color.is_none() {
+        return Some(None);
+    }
+    let symbol = match keyword(symbol, &[("light", '░'), ("medium", '▒'), ("dark", '▓')]) {
+        Some(c) => c,
+        None => {
+            let mut chars = unquote(symbol).unwrap_or(symbol).chars();
+            let c = chars.next()?;
+            (chars.next().is_none() && c.width() == Some(1)).then_some(c)?
+        }
+    };
+    Some(Some(Pattern { symbol, color }))
+}
+
+/// `z-index`: an integer, or `auto` (0).
+pub(super) fn z_index(value: &str) -> Option<i32> {
+    if value.trim().eq_ignore_ascii_case("auto") {
+        return Some(0);
+    }
+    value.trim().parse().ok()
+}
+
+/// A non-negative number, as `flex-grow` takes.
+pub(super) fn grow(value: &str) -> Option<f32> {
+    let n: f32 = value.trim().parse().ok()?;
+    (n.is_finite() && n >= 0.0).then_some(n)
+}
+
+/// The `flex` shorthand: returns the grow factor and the basis (`None`
+/// is `auto`). As in CSS, `flex: 1` means grow from a basis of 0, so items
+/// with equal factors get equal widths. A shrink factor may sit between
+/// the two; it is accepted and ignored.
+pub(super) fn flex(value: &str) -> Option<(f32, Option<Length>)> {
+    if let Some(grow) = keyword(value, &[("none", 0.0), ("initial", 0.0), ("auto", 1.0)]) {
+        return Some((grow, None));
+    }
+    let zero = Some(Length::Cells(0));
+    match split_top_level(value, ' ')[..] {
+        [one] => match grow(one) {
+            Some(n) => Some((n, zero)),
+            None => Some((1.0, flex_basis(one)?)),
+        },
+        [first, second] => match grow(second) {
+            Some(_) => Some((grow(first)?, zero)),
+            None => Some((grow(first)?, flex_basis(second)?)),
+        },
+        [first, second, basis] => {
+            grow(second)?;
+            Some((grow(first)?, flex_basis(basis)?))
+        }
+        _ => None,
+    }
+}
+
+/// `flex-basis`: a non-negative width, or `auto` (`Some(None)`).
+pub(super) fn flex_basis(value: &str) -> Option<Option<Length>> {
+    length(value).filter(|basis| match basis {
+        Some(Length::Cells(n)) => *n >= 0,
+        Some(Length::Percent(p)) => *p >= 0.0,
+        None => true,
+    })
+}
+
+/// `gap`: one value, or a row gap and a column gap (only columns matter in a flex row).
+pub(super) fn gap(value: &str) -> Option<i32> {
+    match split_top_level(value, ' ')[..] {
+        [gap] | [_, gap] => cells(gap),
+        _ => None,
+    }
 }
 
 /// The inside of a `"…"` or `'…'` string.
@@ -212,5 +390,97 @@ mod tests {
         );
         assert_eq!(list_style_type("'"), None);
         assert_eq!(list_style_type("hexagon"), None);
+    }
+
+    #[test]
+    fn border_shorthand_in_any_order() {
+        let side = |style, color| Some(BorderSide { style, color });
+        assert_eq!(border("double"), side(BorderStyle::Double, None));
+        assert_eq!(
+            border("yellow thick"),
+            side(BorderStyle::Thick, Some(Ega::Yellow))
+        );
+        assert_eq!(
+            border("1px solid #fff"),
+            side(BorderStyle::Single, Some(Ega::White))
+        );
+        assert_eq!(border("0 single"), side(BorderStyle::None, None));
+        assert_eq!(border("red"), side(BorderStyle::None, Some(Ega::Red)));
+        assert_eq!(border("single double"), None);
+        assert_eq!(border("dashed"), None);
+    }
+
+    #[test]
+    fn shadows() {
+        assert_eq!(
+            shadow("2 1"),
+            Some(Some(Shadow {
+                x: 2,
+                y: 1,
+                color: Ega::Black
+            }))
+        );
+        assert_eq!(
+            shadow("darkgray -1 1"),
+            Some(Some(Shadow {
+                x: -1,
+                y: 1,
+                color: Ega::DarkGray
+            }))
+        );
+        assert_eq!(shadow("none"), Some(None));
+        assert_eq!(shadow("2"), None);
+        assert_eq!(shadow("2 1 4 black"), None);
+    }
+
+    #[test]
+    fn fill_patterns() {
+        let some = |symbol, color| Some(Some(Pattern { symbol, color }));
+        assert_eq!(pattern("\"░\" blue"), some('░', Some(Ega::Blue)));
+        assert_eq!(pattern("▓ red"), some('▓', Some(Ega::Red)));
+        assert_eq!(pattern("medium"), some('▒', None));
+        assert_eq!(pattern("'x'"), some('x', None));
+        assert_eq!(pattern("none"), Some(None));
+        assert_eq!(pattern("\"ab\""), None);
+        assert_eq!(pattern("\"漢\""), None, "double width");
+    }
+
+    #[test]
+    fn auto_margins() {
+        let (edges, auto) = margins("1 auto 0").unwrap();
+        assert_eq!(edges, Edges::from([1, 0, 0, 0]));
+        assert_eq!(
+            auto,
+            AutoMargin {
+                left: true,
+                right: true
+            }
+        );
+        let (edges, auto) = margins("auto 2").unwrap();
+        assert_eq!(edges, Edges::from([0, 2, 0, 2]), "vertical auto is 0");
+        assert_eq!(auto, AutoMargin::default());
+    }
+
+    #[test]
+    fn flex_and_gap() {
+        let zero = Some(Length::Cells(0));
+        assert_eq!(flex("2"), Some((2.0, zero)));
+        assert_eq!(flex("1 1"), Some((1.0, zero)));
+        assert_eq!(flex("1 1 auto"), Some((1.0, None)));
+        assert_eq!(flex("2 30%"), Some((2.0, Some(Length::Percent(30.0)))));
+        assert_eq!(
+            flex("20"),
+            Some((20.0, zero)),
+            "a lone number is the grow factor"
+        );
+        assert_eq!(flex("50%"), Some((1.0, Some(Length::Percent(50.0)))));
+        assert_eq!(flex("auto"), Some((1.0, None)));
+        assert_eq!(flex("none"), Some((0.0, None)));
+        assert_eq!(flex("-1"), None);
+        assert_eq!(flex("1 wide"), None);
+        assert_eq!(gap("2"), Some(2));
+        assert_eq!(gap("1 3"), Some(3));
+        assert_eq!(z_index("auto"), Some(0));
+        assert_eq!(z_index("-2"), Some(-2));
     }
 }

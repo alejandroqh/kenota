@@ -129,11 +129,32 @@ Notes:
 - CSS problems are collected per slide in `Slide::warnings`, ready for `check` (milestone 7).
 - selector matching uses `simplecss`; rules and declarations use our own tokenizer (custom properties, warnings).
 
-### 3. Boxes
-- [ ] Borders (single, double, thick), drop shadows, `--fill` dither patterns
-- [ ] `display:flex` rows with gap and fixed/percent/auto widths
-- [ ] `position:absolute` in cells, `z-index`, overlap
-- [ ] Plain tables with box-drawing grid
+### 3. Boxes ✅
+- [x] Borders (single, double, thick), drop shadows, `--fill` dither patterns
+- [x] `display:flex` rows with gap and fixed/percent/auto widths
+- [x] `position:absolute` in cells, `z-index`, overlap
+- [x] Plain tables with box-drawing grid
+
+Notes:
+- `border: single | double | thick [color]` (CSS `solid` = single), plus `border-top` …,
+  `border-style`, `border-color` and the per-side longhands. Mixed corners pick ╒ ╓ etc.
+  The default border color is the text color.
+- `width` and `height` include padding and border (like `box-sizing: border-box`).
+  `margin: 0 auto` centers a box that has a width.
+- `box-shadow: x y [color]` is solid (black by default) and only shows outside the box.
+- `--fill: "░" | light | medium | dark [color]` repeats a character over the background.
+- The body's background and fill cover the whole slide (CSS background propagation),
+  so `z-index: -1` boxes show behind the text.
+- Flex: one row. `flex` (`flex: 1` grows from a zero basis), `flex-grow`, `flex-basis`, `gap`,
+  `justify-content`, `align-items` (stretch by default). Items without a width shrink to
+  their longest word; items with a width keep it.
+- `position: relative | absolute`, `top/right/bottom/left/inset` (cells or %), `z-index`.
+  Absolute boxes go in the nearest positioned ancestor's padding box, else the slide
+  area; without a width they shrink to fit.
+- Tables: frame from the table's `border` (single by default), inner lines single, `rules`
+  attribute (`groups` default = column lines + lines between thead/tbody/tfoot), a first
+  row of `<th>` counts as a header, `<caption>`, row backgrounds. Columns fit content.
+- Not yet: `colspan`/`rowspan`, flex wrapping and columns, `overflow` clipping.
 
 ### 4. Large text
 - [ ] FIGlet `.flf` loader, 2–3 bundled fonts, `<h1>` + `data-font`

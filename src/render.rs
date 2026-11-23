@@ -39,8 +39,20 @@ pub fn slide_canvas(deck: &Deck, index: usize) -> Buffer {
         height: area.height - footer_rows,
         ..area
     };
-    let list = layout::layout(&slide.root, content);
-    paint(&list.items, &mut buf, content);
+    let mut items = Vec::new();
+    if let Some((symbol, color)) = slide.pattern() {
+        // Like the background, the body's fill pattern covers the whole slide.
+        items.push(Item::Pattern {
+            x: 0,
+            y: 0,
+            width: i32::from(content.width),
+            height: i32::from(content.height),
+            symbol,
+            color,
+        });
+    }
+    items.extend(layout::layout(&slide.root, content).items);
+    paint(&items, &mut buf, content);
 
     if footer_rows > 0 {
         chrome::footer(
@@ -83,6 +95,21 @@ pub fn paint(items: &[Item], buf: &mut Buffer, clip: Rect) {
                 for row in (*y).max(top)..(y + height).min(bottom) {
                     for col in (*x).max(left)..(x + width).min(right) {
                         buf[at(col, row)].set_symbol(" ").set_bg(color.color());
+                    }
+                }
+            }
+            Item::Pattern {
+                x,
+                y,
+                width,
+                height,
+                symbol,
+                color,
+            } => {
+                let symbol = symbol.encode_utf8(&mut [0; 4]).to_string();
+                for row in (*y).max(top)..(y + height).min(bottom) {
+                    for col in (*x).max(left)..(x + width).min(right) {
+                        buf[at(col, row)].set_symbol(&symbol).set_fg(color.color());
                     }
                 }
             }
@@ -189,11 +216,49 @@ mod tests {
     }
 
     #[test]
+    fn boxes_slide() {
+        insta::assert_snapshot!(buffer_text(&single_slide_canvas(
+            "<style>
+               .row { display: flex; gap: 3; margin-bottom: 2 }
+               .row div { flex: 1; padding: 0 1; box-shadow: 2 1 }
+               .desk { --fill: light; padding: 1 0 }
+               .dialog { width: 30; margin: 0 auto; border: double; background: lightgray; text-align: center }
+               .tag { position: absolute; right: 2; top: 1; border: thick; z-index: 1 }
+             </style>
+             <h2>Boxes</h2>
+             <div class='row'>
+               <div style='border: single'>single</div>
+               <div style='border: double'>double, and wrapping text</div>
+               <div style='border: thick'>thick</div>
+             </div>
+             <div class='desk'><div class='dialog'>centered on a fill</div></div>
+             <table rules='all'>
+               <thead><tr><th>Key</th><th>Action</th></tr></thead>
+               <tr><td>PgDn</td><td>next slide</td></tr>
+               <tr><td>q</td><td>quit</td></tr>
+             </table>
+             <div class='tag'>NEW</div>"
+        )));
+    }
+
+    #[test]
     fn body_background_fills_the_canvas() {
         let canvas = single_slide_canvas("<style>body { background: blue }</style><p>x</p>");
         assert_eq!(canvas[(0, 0)].bg, Ega::Blue.color());
         assert_eq!(canvas[(79, 22)].bg, Ega::Blue.color());
         assert_eq!(canvas[(0, 24)].bg, Ega::Black.color(), "footer stays black");
+    }
+
+    #[test]
+    fn body_pattern_fills_the_canvas() {
+        let canvas = single_slide_canvas(
+            "<style>body { background: blue; --fill: light cyan }</style><p>x</p>",
+        );
+        assert_eq!(canvas[(0, 0)].symbol(), "░");
+        assert_eq!(canvas[(0, 0)].fg, Ega::Cyan.color());
+        assert_eq!(canvas[(79, 22)].symbol(), "░");
+        assert_eq!(canvas[(2, 1)].symbol(), "x");
+        assert_ne!(canvas[(0, 24)].symbol(), "░", "footer has no pattern");
     }
 
     #[test]

@@ -11,9 +11,14 @@ head, script, style, title, template, noscript, meta, link {
 
 html, body, div, section, article, header, footer, main, nav, aside,
 address, p, h1, h2, h3, h4, h5, h6, ul, ol, dl, dt, dd, pre, blockquote,
-figure, figcaption, hr, table, thead, tbody, tfoot, tr, caption, center {
+figure, figcaption, hr, thead, tbody, tfoot, tr, caption, center {
   display: block;
 }
+
+table { display: table; border: single; }
+caption { text-align: center; }
+td, th { padding: 0 1; }
+th { text-align: center; }
 
 li { display: list-item; }
 

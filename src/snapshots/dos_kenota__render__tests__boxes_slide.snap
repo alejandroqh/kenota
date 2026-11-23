@@ -1,0 +1,29 @@
+---
+source: src/render.rs
+expression: "buffer_text(&single_slide_canvas(\"<style>\n               .row { display: flex; gap: 3; margin-bottom: 2 }\n               .row div { flex: 1; padding: 0 1; box-shadow: 2 1 }\n               .desk { --fill: light; padding: 1 0 }\n               .dialog { width: 30; margin: 0 auto; border: double; background: lightgray; text-align: center }\n               .tag { position: absolute; right: 2; top: 1; border: thick; z-index: 1 }\n             </style>\n             <h2>Boxes</h2>\n             <div class='row'>\n               <div style='border: single'>single</div>\n               <div style='border: double'>double, and wrapping text</div>\n               <div style='border: thick'>thick</div>\n             </div>\n             <div class='desk'><div class='dialog'>centered on a fill</div></div>\n             <table rules='all'>\n               <thead><tr><th>Key</th><th>Action</th></tr></thead>\n               <tr><td>PgDn</td><td>next slide</td></tr>\n               <tr><td>q</td><td>quit</td></tr>\n             </table>\n             <div class='tag'>NEW</div>\"))"
+---
+
+  Boxes                                                                  █▀▀▀█
+                                                                         █NEW█
+  ┌──────────────────────┐   ╔═════════════════════╗   █▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█▄▄▄█
+  │ single               │   ║ double, and         ║   █ thick               █
+  │                      │   ║ wrapping text       ║   █                     █
+  └──────────────────────┘   ╚═════════════════════╝   █▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█
+
+
+  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+  ░░░░░░░░░░░░░░░░░░░░░░░╔════════════════════════════╗░░░░░░░░░░░░░░░░░░░░░░░
+  ░░░░░░░░░░░░░░░░░░░░░░░║     centered on a fill     ║░░░░░░░░░░░░░░░░░░░░░░░
+  ░░░░░░░░░░░░░░░░░░░░░░░╚════════════════════════════╝░░░░░░░░░░░░░░░░░░░░░░░
+  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+  ┌──────┬────────────┐
+  │ Key  │   Action   │
+  ├──────┼────────────┤
+  │ PgDn │ next slide │
+  ├──────┼────────────┤
+  │ q    │ quit       │
+  └──────┴────────────┘
+
+
+                                            ────────────────Test────────────────
+                                                 ◄◄◄ PgUp • 1/1 • PgDn ►►►

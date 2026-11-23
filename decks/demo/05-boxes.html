@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+  <title>Boxes</title>
+  <style>
+    body { background: blue; }
+    h2 { color: white; }
+    .row { display: flex; gap: 4; margin-bottom: 2; }
+    .card { flex: 1; padding: 0 1; background: blue; color: white; box-shadow: 2 1; }
+    .single { border: single; }
+    .double { border: double yellow; }
+    .thick { border: thick lightcyan; }
+    .desk { --fill: medium cyan; padding: 1 0; margin-bottom: 1; }
+    .dialog {
+      width: 46; margin: 0 auto; padding: 0 2;
+      background: lightgray; color: black;
+      border: double; box-shadow: 2 1; text-align: center;
+    }
+    .dialog code { color: blue; }
+  </style>
+</head>
+<body>
+  <h2>Boxes, borders and shadows</h2>
+  <div class="row">
+    <div class="card single"><code>border: single</code><br>Plain lines for most boxes.</div>
+    <div class="card double"><code>border: double</code><br>For titles and dialogs.</div>
+    <div class="card thick"><code>border: thick</code><br>Solid blocks for emphasis.</div>
+  </div>
+  <div class="desk">
+    <div class="dialog">
+      <code>--fill: medium cyan</code> repeats ▒ behind a box.
+      <code>margin: 0 auto</code> centers this one.
+    </div>
+  </div>
+  <p><code>box-shadow: 2 1</code> casts the black drop shadow, two columns right and one row down.</p>
+</body>
+</html>

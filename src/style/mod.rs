@@ -3,11 +3,15 @@
 //! Plain numbers are character cells: `margin: 1 2` is one row above and
 //! below, two columns left and right.
 
+mod boxes;
 mod cascade;
 mod color;
 mod parse;
 mod values;
 
+pub use boxes::{
+    Align, AutoMargin, Border, BorderSide, BorderStyle, Inset, Justify, Pattern, Position, Shadow,
+};
 pub use cascade::{Content, StyledNode, build};
 pub use color::parse_color;
 
@@ -18,6 +22,10 @@ pub enum Display {
     Inline,
     Block,
     ListItem,
+    /// Children side by side in one row.
+    Flex,
+    /// Rows and cells drawn with a box-drawing grid.
+    Table,
     None,
 }
 
@@ -79,6 +87,18 @@ pub struct Edges {
     pub left: i32,
 }
 
+impl From<[i32; 4]> for Edges {
+    /// Top, right, bottom, left.
+    fn from([top, right, bottom, left]: [i32; 4]) -> Self {
+        Self {
+            top,
+            right,
+            bottom,
+            left,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Length {
     Cells(i32),
@@ -115,9 +135,29 @@ pub struct ComputedStyle {
     /// `None` is transparent.
     pub background: Option<Ega>,
     pub margin: Edges,
+    pub auto_margin: AutoMargin,
     pub padding: Edges,
-    /// `None` is `auto`: as wide as the container allows.
+    pub border: Border,
+    /// Width of the border box (padding and border included). `None` is
+    /// `auto`: as wide as the container allows.
     pub width: Option<Length>,
+    /// Height of the border box in cells. `None` is `auto`: as tall as the content.
+    pub height: Option<i32>,
+    pub shadow: Option<Shadow>,
+    /// `--fill`: a character pattern drawn over the background.
+    pub pattern: Option<Pattern>,
+    pub position: Position,
+    pub inset: Inset,
+    pub z_index: i32,
+    /// `flex-grow`: this item's share of a flex row's spare width.
+    pub flex_grow: f32,
+    /// `flex-basis`: the width an item starts from before growing. `None`
+    /// is `auto`: its `width`, else its content's width.
+    pub flex_basis: Option<Length>,
+    /// Columns between flex items.
+    pub gap: i32,
+    pub justify_content: Justify,
+    pub align_items: Align,
 }
 
 /// Why a declaration was ignored.
@@ -142,20 +182,36 @@ impl ComputedStyle {
             display: Display::Inline,
             background: None,
             margin: Edges::default(),
+            auto_margin: AutoMargin::default(),
             padding: Edges::default(),
+            border: Border::default(),
             width: None,
+            height: None,
+            shadow: None,
+            pattern: None,
+            position: Position::Static,
+            inset: Inset::default(),
+            z_index: 0,
+            flex_grow: 0.0,
+            flex_basis: None,
+            gap: 0,
+            justify_content: Justify::Start,
+            align_items: Align::Stretch,
         }
     }
 
     /// The starting style of a child: inherited properties copied, the rest reset.
     pub fn inherit(&self) -> Self {
         Self {
-            display: Display::Inline,
-            background: None,
-            margin: Edges::default(),
-            padding: Edges::default(),
-            width: None,
-            ..self.clone()
+            color: self.color,
+            bold: self.bold,
+            underline: self.underline,
+            line_through: self.line_through,
+            text_align: self.text_align,
+            white_space: self.white_space,
+            text_transform: self.text_transform,
+            list_style_type: self.list_style_type.clone(),
+            ..Self::root()
         }
     }
 
@@ -170,7 +226,7 @@ impl ComputedStyle {
 
     /// Applies one declaration. `name` must be lowercase.
     pub fn apply(&mut self, name: &str, value: &str) -> Result<(), Rejected> {
-        use values::{cells, edges, keyword, length};
+        use values::{cells, edges, four, keyword, length, margin};
         let invalid = Rejected::InvalidValue;
 
         match name {
@@ -190,22 +246,109 @@ impl ComputedStyle {
                         ("inline", Display::Inline),
                         ("block", Display::Block),
                         ("list-item", Display::ListItem),
+                        ("flex", Display::Flex),
+                        ("table", Display::Table),
                         ("none", Display::None),
                     ],
                 )
                 .ok_or(invalid)?;
             }
-            "margin" => self.margin = edges(value).ok_or(invalid)?,
-            "margin-top" => self.margin.top = cells(value).ok_or(invalid)?,
-            "margin-right" => self.margin.right = cells(value).ok_or(invalid)?,
-            "margin-bottom" => self.margin.bottom = cells(value).ok_or(invalid)?,
-            "margin-left" => self.margin.left = cells(value).ok_or(invalid)?,
+            "margin" => (self.margin, self.auto_margin) = values::margins(value).ok_or(invalid)?,
+            "margin-top" => self.margin.top = margin(value).ok_or(invalid)?.unwrap_or(0),
+            "margin-bottom" => self.margin.bottom = margin(value).ok_or(invalid)?.unwrap_or(0),
+            "margin-right" => {
+                let m = margin(value).ok_or(invalid)?;
+                (self.margin.right, self.auto_margin.right) = (m.unwrap_or(0), m.is_none());
+            }
+            "margin-left" => {
+                let m = margin(value).ok_or(invalid)?;
+                (self.margin.left, self.auto_margin.left) = (m.unwrap_or(0), m.is_none());
+            }
             "padding" => self.padding = edges(value).ok_or(invalid)?,
             "padding-top" => self.padding.top = cells(value).ok_or(invalid)?,
             "padding-right" => self.padding.right = cells(value).ok_or(invalid)?,
             "padding-bottom" => self.padding.bottom = cells(value).ok_or(invalid)?,
             "padding-left" => self.padding.left = cells(value).ok_or(invalid)?,
             "width" => self.width = length(value).ok_or(invalid)?,
+            "height" => self.height = values::height(value).ok_or(invalid)?,
+            "box-sizing" => {
+                // Widths and heights always include padding and border.
+                keyword(value, &[("border-box", ())]).ok_or(invalid)?;
+            }
+            "border" => self.border = Border::all(values::border(value).ok_or(invalid)?),
+            "border-collapse" => {
+                // Table grids always share lines between cells.
+                keyword(value, &[("collapse", ())]).ok_or(invalid)?;
+            }
+            border if border.starts_with("border-") => {
+                self.apply_border(&border["border-".len()..], value)?;
+            }
+            "box-shadow" => self.shadow = values::shadow(value).ok_or(invalid)?,
+            "--fill" => self.pattern = values::pattern(value).ok_or(invalid)?,
+            "position" => {
+                self.position = keyword(
+                    value,
+                    &[
+                        ("static", Position::Static),
+                        ("relative", Position::Relative),
+                        ("absolute", Position::Absolute),
+                    ],
+                )
+                .ok_or(invalid)?;
+            }
+            "top" => self.inset.top = length(value).ok_or(invalid)?,
+            "right" => self.inset.right = length(value).ok_or(invalid)?,
+            "bottom" => self.inset.bottom = length(value).ok_or(invalid)?,
+            "left" => self.inset.left = length(value).ok_or(invalid)?,
+            "inset" => {
+                let [top, right, bottom, left] = four(value, length).ok_or(invalid)?;
+                self.inset = Inset {
+                    top,
+                    right,
+                    bottom,
+                    left,
+                };
+            }
+            "z-index" => self.z_index = values::z_index(value).ok_or(invalid)?,
+            "flex" => (self.flex_grow, self.flex_basis) = values::flex(value).ok_or(invalid)?,
+            "flex-grow" => self.flex_grow = values::grow(value).ok_or(invalid)?,
+            "flex-basis" => self.flex_basis = values::flex_basis(value).ok_or(invalid)?,
+            "gap" | "column-gap" => self.gap = values::gap(value).ok_or(invalid)?,
+            "justify-content" => {
+                self.justify_content = keyword(
+                    value,
+                    &[
+                        ("normal", Justify::Start),
+                        ("start", Justify::Start),
+                        ("flex-start", Justify::Start),
+                        ("left", Justify::Start),
+                        ("center", Justify::Center),
+                        ("end", Justify::End),
+                        ("flex-end", Justify::End),
+                        ("right", Justify::End),
+                        ("space-between", Justify::SpaceBetween),
+                        ("space-around", Justify::SpaceAround),
+                        ("space-evenly", Justify::SpaceEvenly),
+                    ],
+                )
+                .ok_or(invalid)?;
+            }
+            "align-items" => {
+                self.align_items = keyword(
+                    value,
+                    &[
+                        ("normal", Align::Stretch),
+                        ("stretch", Align::Stretch),
+                        ("start", Align::Start),
+                        ("flex-start", Align::Start),
+                        ("baseline", Align::Start),
+                        ("center", Align::Center),
+                        ("end", Align::End),
+                        ("flex-end", Align::End),
+                    ],
+                )
+                .ok_or(invalid)?;
+            }
             "text-align" => {
                 self.text_align = keyword(
                     value,
@@ -255,6 +398,40 @@ impl ComputedStyle {
             // Custom properties are reserved for dos-kenota extensions and deck variables.
             custom if custom.starts_with("--") => {}
             _ => return Err(Rejected::UnknownProperty),
+        }
+        Ok(())
+    }
+
+    /// `border-<property>`: `style`, `color`, a side (`top`), or a side's
+    /// `style`/`color` (`top-color`).
+    fn apply_border(&mut self, property: &str, value: &str) -> Result<(), Rejected> {
+        let invalid = Rejected::InvalidValue;
+        match property {
+            "style" => {
+                let styles = values::four(value, values::border_style).ok_or(invalid)?;
+                for (side, style) in self.border.sides_mut().into_iter().zip(styles) {
+                    side.style = style;
+                }
+            }
+            "color" => {
+                let colors = values::four(value, parse_color).ok_or(invalid)?;
+                for (side, color) in self.border.sides_mut().into_iter().zip(colors) {
+                    side.color = Some(color);
+                }
+            }
+            _ => {
+                let (name, longhand) = property.split_once('-').unwrap_or((property, ""));
+                let side = self
+                    .border
+                    .side_mut(name)
+                    .ok_or(Rejected::UnknownProperty)?;
+                match longhand {
+                    "" => *side = values::border(value).ok_or(invalid)?,
+                    "style" => side.style = values::border_style(value).ok_or(invalid)?,
+                    "color" => side.color = Some(parse_color(value).ok_or(invalid)?),
+                    _ => return Err(Rejected::UnknownProperty),
+                }
+            }
         }
         Ok(())
     }
@@ -316,5 +493,64 @@ mod tests {
     fn percent_width_resolves_against_base() {
         assert_eq!(Length::Percent(50.0).resolve(76), 38);
         assert_eq!(Length::Cells(10).resolve(76), 10);
+    }
+
+    #[test]
+    fn border_longhands() {
+        let mut style = ComputedStyle::root();
+        style.apply("border", "single").unwrap();
+        style.apply("border-style", "double none").unwrap();
+        style.apply("border-left-color", "red").unwrap();
+        style.apply("border-right", "thick blue").unwrap();
+        assert_eq!(style.border.top.style, BorderStyle::Double);
+        assert_eq!(style.border.left.style, BorderStyle::None);
+        assert_eq!(style.border.left.color, Some(Ega::Red));
+        assert_eq!(
+            style.border.right,
+            BorderSide {
+                style: BorderStyle::Thick,
+                color: Some(Ega::Blue)
+            }
+        );
+        assert_eq!(style.border.widths(), Edges::from([1, 1, 1, 0]));
+        assert_eq!(
+            style.apply("border-radius", "2"),
+            Err(Rejected::UnknownProperty)
+        );
+        assert_eq!(
+            style.apply("border-top-width", "1"),
+            Err(Rejected::UnknownProperty)
+        );
+    }
+
+    #[test]
+    fn positioning_properties() {
+        let mut style = ComputedStyle::root();
+        style.apply("position", "absolute").unwrap();
+        style.apply("inset", "1 auto").unwrap();
+        style.apply("left", "50%").unwrap();
+        assert_eq!(style.position, Position::Absolute);
+        assert_eq!(style.inset.top, Some(Length::Cells(1)));
+        assert_eq!(style.inset.right, None);
+        assert_eq!(style.inset.left, Some(Length::Percent(50.0)));
+        assert_eq!(
+            style.apply("position", "fixed"),
+            Err(Rejected::InvalidValue)
+        );
+    }
+
+    #[test]
+    fn box_properties_are_not_inherited() {
+        let mut parent = ComputedStyle::root();
+        parent.apply("border", "double").unwrap();
+        parent.apply("box-shadow", "2 1").unwrap();
+        parent.apply("--fill", "light").unwrap();
+        parent.apply("display", "flex").unwrap();
+        parent.apply("gap", "2").unwrap();
+        let child = parent.inherit();
+        assert_eq!(child.border, Border::default());
+        assert_eq!(child.shadow, None);
+        assert_eq!(child.pattern, None);
+        assert_eq!(child.gap, 0);
     }
 }

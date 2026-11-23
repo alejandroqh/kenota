@@ -5,7 +5,8 @@ use std::mem;
 use ratatui::style::Style;
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
-use super::{Item, text_style};
+use super::measure::Intrinsic;
+use super::{Item, is_absolute, text_style};
 use crate::palette::Ega;
 use crate::style::{ComputedStyle, Content, StyledNode, TextAlign, TextTransform};
 
@@ -21,18 +22,21 @@ enum Atom {
 type Line = Vec<(String, Style)>;
 
 /// Lays out `run` (consecutive inline siblings) as lines starting at row
-/// `y`. Returns how many lines it took; whitespace-only runs take none.
-pub(super) fn layout(
-    run: &[&StyledNode],
+/// `y`. Returns how many lines it took (whitespace-only runs take none),
+/// and the absolutely positioned elements found inside, which are not
+/// part of the text.
+pub(super) fn layout<'a>(
+    run: &[&'a StyledNode],
     container: &ComputedStyle,
     x: i32,
     y: i32,
     width: i32,
     out: &mut Vec<Item>,
-) -> i32 {
+) -> (i32, Vec<&'a StyledNode>) {
     let mut atoms = Vec::new();
+    let mut absolute = Vec::new();
     for node in run {
-        collect(node, None, &mut atoms);
+        collect(node, None, &mut atoms, &mut absolute);
     }
     let lines = break_lines(
         &atoms,
@@ -44,12 +48,49 @@ pub(super) fn layout(
         emit(line, x, row, width, container.text_align, out);
         row += 1;
     }
-    row - y
+    (row - y, absolute)
+}
+
+/// The narrowest and widest `run` can be laid out.
+pub(super) fn intrinsic(run: &[&StyledNode], container: &ComputedStyle) -> Intrinsic {
+    let mut atoms = Vec::new();
+    for node in run {
+        collect(node, None, &mut atoms, &mut Vec::new());
+    }
+    let width = |text: &str| i32::try_from(text.width()).unwrap_or(i32::MAX);
+    let max = break_lines(&atoms, usize::MAX, false)
+        .iter()
+        .map(|line| line.iter().map(|(text, _)| width(text)).sum())
+        .max()
+        .unwrap_or(0);
+    let min = if container.white_space.wraps() {
+        atoms
+            .iter()
+            .map(|atom| match atom {
+                Atom::Word(word, _) => width(word),
+                Atom::Space(_, true) => 1,
+                _ => 0,
+            })
+            .max()
+            .unwrap_or(0)
+    } else {
+        max
+    };
+    Intrinsic { min, max }
 }
 
 /// Flattens inline content into atoms. `background` comes from enclosing
 /// inline elements, so `<mark><b>x</b></mark>` keeps the mark's color.
-fn collect(node: &StyledNode, background: Option<Ega>, atoms: &mut Vec<Atom>) {
+fn collect<'a>(
+    node: &'a StyledNode,
+    background: Option<Ega>,
+    atoms: &mut Vec<Atom>,
+    absolute: &mut Vec<&'a StyledNode>,
+) {
+    if is_absolute(node) {
+        absolute.push(node);
+        return;
+    }
     match &node.content {
         Content::Text(text) => {
             let style = text_style(&node.style, background);
@@ -71,14 +112,14 @@ fn collect(node: &StyledNode, background: Option<Ega>, atoms: &mut Vec<Atom>) {
             }
             let background = node.style.background.or(background);
             for child in &node.children {
-                collect(child, background, atoms);
+                collect(child, background, atoms, absolute);
             }
         }
     }
 }
 
 /// HTML whitespace. Non-breaking spaces are not included: they stay in words.
-fn is_html_space(c: char) -> bool {
+pub(super) fn is_html_space(c: char) -> bool {
     matches!(c, ' ' | '\t' | '\n' | '\r' | '\x0c')
 }
 

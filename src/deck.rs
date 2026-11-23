@@ -191,6 +191,20 @@ impl Slide {
             .or(self.root.style.background)
             .unwrap_or(Ega::Black)
     }
+
+    /// The `--fill` pattern of the body (or the root), with its color.
+    pub fn pattern(&self) -> Option<(char, Ega)> {
+        [self.root.find("body"), Some(&self.root)]
+            .into_iter()
+            .flatten()
+            .find_map(|node| {
+                let pattern = node.style.pattern?;
+                Some((
+                    pattern.symbol,
+                    pattern.color.unwrap_or_else(|| node.style.text_color()),
+                ))
+            })
+    }
 }
 
 fn is_html(path: &Path) -> bool {
