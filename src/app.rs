@@ -90,7 +90,7 @@ mod tests {
     use ratatui::style::Color;
 
     use super::*;
-    use crate::deck::test_deck;
+    use crate::deck::{test_deck, test_slide};
     use crate::render::buffer_text;
 
     fn app(slides: usize) -> App {
@@ -152,8 +152,8 @@ mod tests {
 
     #[test]
     fn draw_shows_slide_and_downgrades_colors() {
-        let mut deck = test_deck(&["Hello"]);
-        deck.slides[0].text = "Hi there".into();
+        let mut deck = test_deck(&[]);
+        deck.slides.push(test_slide("Hello", "<p>Hi there</p>"));
         let app = App::new(deck, 0, false);
         let mut terminal = Terminal::new(TestBackend::new(90, 30)).unwrap();
         terminal.draw(|frame| app.draw(frame)).unwrap();

@@ -2,7 +2,7 @@
 
 A text-only presentation engine in the style of the MS Works DOS tutorials:
 EGA 16 colors, box drawing, ░▒▓ fills, drop shadows, and a footer bar
-reading `◄◄◄PgUp • n/N • PgDn►►►`.
+reading `◄◄◄ PgUp • n/N • PgDn ►►►`.
 
 ## Decisions
 
@@ -104,20 +104,30 @@ Crates: `ratatui`, `scraper`, `simplecss`, `image` (png+gif), `toml` + `serde`, 
 - [x] Slide title from `<title>`, falling back to the file name
 - [x] Plain-text extraction of the slide body (temporary until milestone 2)
 - [x] 80×25 canvas with EGA colors, ANSI-16 fallback when the terminal lacks truecolor
-- [x] Footer bar: slide title, `◄◄◄PgUp • n/N • PgDn►►►`, dimmed arrows at the ends
+- [x] Footer bar: slide title, `◄◄◄ PgUp • n/N • PgDn ►►►`, dimmed arrows at the ends
 - [x] Centered canvas with a border when there is room; "terminal too small" screen
 - [x] Keys: PgDn/→/↓/Space/Enter next, PgUp/←/↑/Backspace back, Home/End, q/Esc/Ctrl+C quit
 - [x] Demo deck in `decks/demo`
 - [x] Tests: deck loading, text extraction, navigation, chrome, canvas snapshot
 
-### 2. HTML and CSS core
-- [ ] DOM → styled tree; CSS subset from `<style>`, `style=""`, deck `style.css`
-- [ ] Selectors: tag, `.class`, `#id`, compound, descendant
-- [ ] EGA color names + nearest-color snapping
-- [ ] Block/inline flow, word wrapping, margins, padding
-- [ ] Headings, `b`/`strong`/`u`/`em`/`mark`, `pre`, `code`, `hr`, `br`
-- [ ] Lists with DOS bullets and numbering
-- [ ] Snapshot tests per feature
+### 2. HTML and CSS core ✅
+- [x] DOM → styled tree; CSS subset from `<style>`, `style=""`, deck `style.css`
+- [x] Selectors: tag, `.class`, `#id`, compound, descendant (also `>`, `+`, `[attr]`, `:first-child`)
+- [x] EGA color names + nearest-color snapping
+- [x] Block/inline flow, word wrapping, margins, padding
+- [x] Headings, `b`/`strong`/`u`/`em`/`mark`, `pre`, `code`, `hr`, `br`
+- [x] Lists with DOS bullets and numbering
+- [x] Snapshot tests per feature
+
+Notes:
+- All default looks live in `src/style/ua.css`; decks override them with normal CSS.
+- Cascade: defaults → deck `style.css` → slide `<style>` → `style=""`; specificity, then order; `!important` wins.
+- Supported properties: `color`, `background(-color)`, `font-weight`, `text-decoration`, `display`
+  (`block|inline|list-item|none`), `margin*`, `padding*`, `width`, `text-align`, `white-space`
+  (`normal|nowrap|pre|pre-wrap`), `text-transform`, `list-style(-type)`. `--custom` properties are accepted.
+- Bold = the bright version of the color (DOS high intensity). Vertical margins collapse.
+- CSS problems are collected per slide in `Slide::warnings`, ready for `check` (milestone 7).
+- selector matching uses `simplecss`; rules and declarations use our own tokenizer (custom properties, warnings).
 
 ### 3. Boxes
 - [ ] Borders (single, double, thick), drop shadows, `--fill` dither patterns

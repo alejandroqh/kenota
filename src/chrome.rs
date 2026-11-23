@@ -26,7 +26,7 @@ const MIN_PANEL_WIDTH: u16 = 36;
 ///
 /// ```text
 ///                                           ─────────── Slide title ───────────
-///  Deck title                                    ◄◄◄PgUp • 2/4 • PgDn►►►
+///  Deck title                                    ◄◄◄ PgUp • 2/4 • PgDn ►►►
 /// ```
 pub fn footer(buf: &mut Buffer, area: Rect, info: &FooterInfo) {
     if area.height < 2 || area.width == 0 {
@@ -40,11 +40,11 @@ pub fn footer(buf: &mut Buffer, area: Rect, info: &FooterInfo) {
         Style::new().fg(color.color())
     };
     let controls = Line::from(vec![
-        Span::styled("◄◄◄PgUp", arrows(info.index > 0)),
+        Span::styled("◄◄◄ PgUp", arrows(info.index > 0)),
         Span::styled(" • ", plain),
         Span::styled(format!("{}/{}", info.index + 1, info.count), plain),
         Span::styled(" • ", plain),
-        Span::styled("PgDn►►►", arrows(info.index + 1 < info.count)),
+        Span::styled("PgDn ►►►", arrows(info.index + 1 < info.count)),
     ]);
     let controls_width = width(&controls.to_string());
     let panel_width = MIN_PANEL_WIDTH

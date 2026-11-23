@@ -66,6 +66,21 @@ impl Ega {
         }
     }
 
+    /// The high-intensity version of a dark color; bright colors stay as they are.
+    pub const fn bright(self) -> Ega {
+        match self {
+            Ega::Black => Ega::DarkGray,
+            Ega::Blue => Ega::LightBlue,
+            Ega::Green => Ega::LightGreen,
+            Ega::Cyan => Ega::LightCyan,
+            Ega::Red => Ega::LightRed,
+            Ega::Magenta => Ega::LightMagenta,
+            Ega::Brown => Ega::Yellow,
+            Ega::LightGray => Ega::White,
+            bright => bright,
+        }
+    }
+
     /// The color as a truecolor terminal color.
     pub const fn color(self) -> Color {
         let (r, g, b) = self.rgb();

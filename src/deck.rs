@@ -11,8 +11,12 @@ use color_eyre::eyre::{Result, WrapErr, bail, eyre};
 use serde::Deserialize;
 
 use crate::html;
+use crate::palette::Ega;
+use crate::style::StyledNode;
 
 pub const CONFIG_FILE: &str = "deck.toml";
+/// Optional stylesheet applied to every slide, after the defaults.
+pub const STYLESHEET_FILE: &str = "style.css";
 
 #[derive(Debug)]
 pub struct Deck {
@@ -27,8 +31,10 @@ pub struct Slide {
     pub path: PathBuf,
     /// `<title>`, or the file name without extension.
     pub title: String,
-    /// Plain-text body (temporary until the layout engine lands).
-    pub text: String,
+    /// The styled `<html>` element.
+    pub root: StyledNode,
+    /// CSS problems found in this slide and the deck stylesheet.
+    pub warnings: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -118,6 +124,16 @@ impl Deck {
             DeckConfig::default()
         };
 
+        let stylesheet_path = root.join(STYLESHEET_FILE);
+        let deck_css = if stylesheet_path.is_file() {
+            Some(
+                fs::read_to_string(&stylesheet_path)
+                    .wrap_err_with(|| format!("reading {}", stylesheet_path.display()))?,
+            )
+        } else {
+            None
+        };
+
         let mut paths = Vec::new();
         for entry in fs::read_dir(root).wrap_err_with(|| format!("reading {}", root.display()))? {
             let path = entry?.path();
@@ -135,7 +151,11 @@ impl Deck {
 
         let slides = paths
             .into_iter()
-            .map(Slide::load)
+            .map(|path| {
+                let source = fs::read_to_string(&path)
+                    .wrap_err_with(|| format!("reading {}", path.display()))?;
+                Ok(Slide::parse(path, &source, deck_css.as_deref()))
+            })
             .collect::<Result<Vec<_>>>()?;
 
         Ok(Deck {
@@ -147,20 +167,29 @@ impl Deck {
 }
 
 impl Slide {
-    fn load(path: PathBuf) -> Result<Slide> {
-        let source =
-            fs::read_to_string(&path).wrap_err_with(|| format!("reading {}", path.display()))?;
-        let extracted = html::extract(&source);
-        let title = extracted.title.unwrap_or_else(|| {
+    /// Builds a slide from its HTML source. `deck_css` is the deck's `style.css`.
+    pub fn parse(path: PathBuf, source: &str, deck_css: Option<&str>) -> Slide {
+        let parsed = html::parse(source, deck_css);
+        let title = parsed.title.unwrap_or_else(|| {
             path.file_stem()
                 .map(|s| s.to_string_lossy().into_owned())
                 .unwrap_or_default()
         });
-        Ok(Slide {
+        Slide {
             path,
             title,
-            text: extracted.body,
-        })
+            root: parsed.root,
+            warnings: parsed.warnings,
+        }
+    }
+
+    /// The canvas color: the body's background, else the html element's, else black.
+    pub fn background(&self) -> Ega {
+        self.root
+            .find("body")
+            .and_then(|body| body.style.background)
+            .or(self.root.style.background)
+            .unwrap_or(Ega::Black)
     }
 }
 
@@ -216,15 +245,18 @@ pub(crate) fn test_deck(titles: &[&str]) -> Deck {
     Deck {
         root: PathBuf::from("test-deck"),
         config: DeckConfig::default(),
-        slides: titles
-            .iter()
-            .map(|title| Slide {
-                path: PathBuf::from(format!("{title}.html")),
-                title: (*title).to_string(),
-                text: String::new(),
-            })
-            .collect(),
+        slides: titles.iter().map(|title| test_slide(title, "")).collect(),
     }
+}
+
+/// An in-memory slide with this title and body HTML.
+#[cfg(test)]
+pub(crate) fn test_slide(title: &str, body: &str) -> Slide {
+    Slide::parse(
+        PathBuf::from(format!("{title}.html")),
+        &format!("<title>{title}</title>{body}"),
+        None,
+    )
 }
 
 #[cfg(test)]
@@ -260,8 +292,31 @@ mod tests {
         ]);
         let deck = Deck::load(dir.path()).unwrap();
         assert_eq!(titles(&deck), ["Start", "2-middle", "End"]);
-        assert_eq!(deck.slides[0].text, "Hello");
+        assert!(deck.slides[0].root.find("p").is_some());
         assert_eq!(deck.config, DeckConfig::default());
+    }
+
+    #[test]
+    fn applies_deck_stylesheet() {
+        let dir = deck_dir(&[
+            (
+                "style.css",
+                "body { background: blue } p { color: yellow; size: 3 }",
+            ),
+            ("a.html", "<p>x</p>"),
+        ]);
+        let slide = &Deck::load(dir.path()).unwrap().slides[0];
+        assert_eq!(slide.background(), Ega::Blue);
+        assert_eq!(slide.root.find("p").unwrap().style.color, Ega::Yellow);
+        assert_eq!(slide.warnings, ["unknown CSS property `size` ignored"]);
+    }
+
+    #[test]
+    fn background_defaults_to_black() {
+        let slide = test_slide("t", "<p>x</p>");
+        assert_eq!(slide.background(), Ega::Black);
+        let slide = test_slide("t", "<body style='background: transparent'>x</body>");
+        assert_eq!(slide.background(), Ega::Black);
     }
 
     #[test]

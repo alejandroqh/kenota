@@ -1,0 +1,29 @@
+---
+source: src/render.rs
+expression: "buffer_text(&single_slide_canvas(\"<h2>Lists</h2>\n             <ul>\n               <li>Bullets hang, so long items wrap neatly under their first word instead of the bullet.</li>\n               <li>Nested lists change symbol\n                 <ul><li>square<ul><li>circle</li></ul></li></ul>\n               </li>\n             </ul>\n             <ol start='9'><li>Numbers</li><li>stay aligned</li></ol>\n             <ol style='list-style-type: upper-roman'><li>Roman</li><li>numerals</li></ol>\n             <pre>\n  ┌──────────┐\n  │ pre text │\n  └──────────┘</pre>\"))"
+---
+
+  Lists
+
+    • Bullets hang, so long items wrap neatly under their first word instead
+      of the bullet.
+    • Nested lists change symbol
+        ■ square
+            ○ circle
+
+     9. Numbers
+    10. stay aligned
+
+     I. Roman
+    II. numerals
+
+    ┌──────────┐
+    │ pre text │
+    └──────────┘
+
+
+
+
+
+                                            ────────────────Test────────────────
+                                                 ◄◄◄ PgUp • 1/1 • PgDn ►►►

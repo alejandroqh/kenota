@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <title>Text Styles</title>
+  <style>
+    body { background: blue; }
+    h2 { color: white; }
+    .note { background: lightgray; color: black; padding: 1 2; margin-top: 1; }
+  </style>
+</head>
+<body>
+  <h2>Text styles</h2>
+  <p>
+    Standard tags map to DOS colors: <b>bold is bright</b>, <em>emphasis is yellow</em>,
+    <mark>mark is a highlight bar</mark>, <code>code is green</code>
+    and <kbd>Ctrl</kbd>+<kbd>C</kbd> look like keys.
+  </p>
+  <p style="color: lightcyan">
+    Any element can set its color and background with CSS, using the 16 EGA
+    color names (<code>lightcyan</code>, <code>brown</code> …) or any CSS color,
+    which snaps to the nearest one.
+  </p>
+  <p style="text-align: center">Text can be centered…</p>
+  <p style="text-align: right">…or pushed to the right.</p>
+  <div class="note">
+    A div with a background and padding makes a simple box.
+    Borders and drop shadows arrive in the next milestone.
+  </div>
+</body>
+</html>
