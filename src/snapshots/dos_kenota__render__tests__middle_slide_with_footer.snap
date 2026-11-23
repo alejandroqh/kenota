@@ -1,0 +1,29 @@
+---
+source: src/render.rs
+expression: "buffer_text(&slide_canvas(&deck, 1))"
+---
+
+  Once you've created a chart,
+  you can quickly and easily change its format.
+
+  This paragraph is long enough that it has to wrap onto a second line inside
+  the 76-column text area.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                            ────────Spreadsheet Charting────────
+ Works Tutorial                                   ◄◄◄PgUp • 2/3 • PgDn►►►
