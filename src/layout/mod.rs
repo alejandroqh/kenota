@@ -15,6 +15,7 @@ mod inline;
 mod marker;
 mod measure;
 mod picture;
+mod plot;
 mod table;
 
 use std::mem;
@@ -23,6 +24,7 @@ use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
 
 use crate::assets::Assets;
+use crate::chart;
 use crate::palette::Ega;
 use crate::style::{ComputedStyle, Display, Length, Position, StyledNode};
 use marker::Marker;
@@ -281,8 +283,9 @@ fn horizontal(node: &StyledNode, width: i32, assets: &Assets) -> (i32, i32) {
     let available = width - margin.left - margin.right;
     let box_width = match style.width {
         Some(w) => w.resolve(width),
-        // Tables and pictures are as wide as their content, not their container.
-        None if style.display == Display::Table || node.tag() == Some("img") => {
+        // Tables and pictures are as wide as their content, not their
+        // container; charts fill it like blocks.
+        None if is_table(node) || node.tag() == Some("img") => {
             measure::intrinsic(node, assets).fit(available)
         }
         None => available,
@@ -324,7 +327,7 @@ fn layout_box<'a>(
     let first_item = ctx.layer.items.len();
     let fixed_height = style.height.or(stretch).map(|h| h.max(0));
 
-    let is_table = style.display == Display::Table;
+    let is_table = is_table(node);
     let size = if is_table {
         BlockSize {
             height: table::layout(node, x, y, width, ctx).max(fixed_height.unwrap_or(0)),
@@ -418,6 +421,11 @@ fn content_box<'a>(
         _ if node.tag() == Some("img") => {
             let inner = fixed_height.map(|h| h - top - bottom);
             let rows = picture::layout(node, content_x, content_y, content_width, inner, ctx);
+            (rows, 0)
+        }
+        _ if chart::kind(node).is_some() => {
+            let inner = fixed_height.map(|h| h - top - bottom);
+            let rows = plot::layout(node, content_x, content_y, content_width, inner, ctx);
             (rows, 0)
         }
         _ if node.tag() == Some("hr") => {
@@ -605,6 +613,11 @@ fn absolute<'a>(pending: &Pending<'a>, containing: Area, ctx: &mut Ctx<'a>) {
         (None, None) => pending.y + margin.top,
     };
     layout_box(node, x, y, width, stretch, None, ctx);
+}
+
+/// A table drawn as a grid; tables with a known `data-chart` are charts.
+fn is_table(node: &StyledNode) -> bool {
+    node.style.display == Display::Table && chart::kind(node).is_none()
 }
 
 fn is_absolute(node: &StyledNode) -> bool {
@@ -1225,6 +1238,117 @@ mod tests {
             &assets,
         );
         assert_eq!(buffer_text(&buf), "▀▀  text");
+    }
+
+    const SALES: &str = "<tr><th></th><th>A</th><th>B</th></tr>
+        <tr><td>x</td><td>4</td><td>2</td></tr>
+        <tr><td>y</td><td>2</td><td>4</td></tr>";
+
+    #[test]
+    fn bar_chart_has_axes_labels_and_legend() {
+        let html = format!(
+            "<table data-chart='bar' style='height: 9'><caption>Sales</caption>{SALES}</table>"
+        );
+        assert_eq!(
+            text(&html, 20, 9),
+            "       Sales
+4 ┤ ▄▄▄         ▄▄▄
+  │ ███         ███
+2 ┤ ███▄▄▄   ▄▄▄███
+  │ ██████   ██████
+0 └─────────────────
+       x       y
+
+    ██ A   ██ B"
+        );
+    }
+
+    #[test]
+    fn series_look_comes_from_header_cells() {
+        let html = "<table data-chart='bar' style='height: 6'>
+              <tr><th></th><th style='background: red'>A</th><th style='--fill: dark green'>B</th></tr>
+              <tr><td>x</td><td>4</td><td>4</td></tr>
+            </table>";
+        let buf = render(html, 12, 6);
+        let row: String = (0..12).map(|x| buf[(x, 1)].symbol().to_string()).collect();
+        assert_eq!(row, "  │ ███▓▓▓  ", "patterns snap to whole cells");
+        assert_eq!(buf[(4, 1)].fg, Ega::Red.color());
+        assert_eq!(buf[(7, 1)].fg, Ega::Green.color());
+    }
+
+    #[test]
+    fn line_chart_joins_points() {
+        let html = "<table data-chart='line' style='height: 4'>
+              <tr><th></th><th>A</th></tr>
+              <tr><td>a</td><td>0</td></tr><tr><td>b</td><td>2</td></tr>
+            </table>";
+        assert_eq!(
+            text(html, 12, 4),
+            "2 ┤     ▄▄\n  │  ▄▀▀\n0 └─────────\n     a   b"
+        );
+    }
+
+    #[test]
+    fn pie_chart_has_a_legend_with_percentages() {
+        let html = "<table data-chart='pie' style='height: 4'>
+              <tr><th></th><th>Votes</th></tr>
+              <tr><td>Yes</td><td>3</td></tr><tr><td>No</td><td>1</td></tr>
+            </table>";
+        let buf = render(html, 30, 4);
+        assert_eq!(
+            buffer_text(&buf),
+            "     ▄████▄\n    ████████   ██ Yes  75%\n    ████████   ██ No   25%\n     ▀████▀"
+        );
+        assert_eq!(
+            buf[(9, 1)].fg,
+            Ega::LightCyan.color(),
+            "the first slice starts at 12 o'clock"
+        );
+        assert_eq!(buf[(5, 1)].fg, Ega::LightMagenta.color());
+    }
+
+    #[test]
+    fn charts_fill_the_width_with_a_default_height() {
+        let slide = html::parse(
+            &format!(
+                "<style>body {{ margin: 0 }}</style><table data-chart='stacked'>{SALES}</table>"
+            ),
+            None,
+        );
+        let list = layout(&slide.root, Rect::new(0, 0, 40, 30), &Assets::default());
+        assert_eq!(list.height, 10 + 2 + 2, "plot, axis and labels, legend");
+        let buf = render(
+            &format!("<table data-chart='stacked'>{SALES}</table>"),
+            40,
+            15,
+        );
+        assert_eq!(
+            buf[(39, 10)].symbol(),
+            "─",
+            "the axis reaches the right edge"
+        );
+    }
+
+    #[test]
+    fn charts_size_themselves_in_flex_rows() {
+        let html = format!(
+            "<div style='display: flex'><table data-chart='pie'>{SALES}</table><p>text</p></div>"
+        );
+        let buf = render(&html, 60, 12);
+        assert!(buffer_text(&buf).lines().any(|line| line.ends_with("text")));
+    }
+
+    #[test]
+    fn unknown_chart_types_draw_tables() {
+        // Without the frame charts drop; the slide gets a warning (see `chart::check`).
+        assert_eq!(
+            text(
+                "<table data-chart='radar'><tr><td>a</td><td>b</td></tr></table>",
+                10,
+                1
+            ),
+            " a │ b"
+        );
     }
 
     #[test]

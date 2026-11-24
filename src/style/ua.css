@@ -16,6 +16,7 @@ figure, figcaption, hr, thead, tbody, tfoot, tr, caption, center {
 }
 
 table { display: table; border: single; }
+table[data-chart] { border: none; }
 caption { text-align: center; }
 td, th { padding: 0 1; }
 th { text-align: center; }

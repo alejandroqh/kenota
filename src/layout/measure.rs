@@ -3,8 +3,12 @@
 
 use std::ops::Add;
 
-use super::{Ctx, flex, inline, is_absolute, is_block_level, layout_box, marker, picture, table};
+use super::{
+    Ctx, flex, inline, is_absolute, is_block_level, is_table, layout_box, marker, picture, plot,
+    table,
+};
 use crate::assets::Assets;
+use crate::chart;
 use crate::style::{Display, Length, StyledNode};
 
 /// Border-box widths in cells.
@@ -67,7 +71,10 @@ pub(super) fn intrinsic(node: &StyledNode, assets: &Assets) -> Intrinsic {
     if node.tag().is_none() {
         return inline::intrinsic(&[node], style, assets);
     }
-    if style.display == Display::Table {
+    if chart::kind(node).is_some() {
+        return plot::intrinsic(node, assets);
+    }
+    if is_table(node) {
         return table::intrinsic(node, assets);
     }
     if node.tag() == Some("img") {

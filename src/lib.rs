@@ -7,6 +7,7 @@
 
 pub mod app;
 pub mod assets;
+pub mod chart;
 pub mod chrome;
 pub mod deck;
 pub mod figlet;

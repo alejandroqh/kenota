@@ -1,0 +1,29 @@
+---
+source: src/render.rs
+expression: "buffer_text(&single_slide_canvas(&format!(\"<style>\n               .row {{ display: flex; gap: 2; margin-bottom: 1 }}\n               .row table {{ flex: 1; height: 11; margin: 0 }}\n             </style>\n             <div class='row'>\n               <table data-chart='stacked'><caption>stacked</caption>{QUARTERS}</table>\n               <table data-chart='stacked100'><caption>stacked100</caption>{QUARTERS}</table>\n             </div>\n             <div class='row'>\n               <table data-chart='area' style='height: 10'><caption>area</caption>{QUARTERS}</table>\n               <table data-chart='xy' style='height: 10'><caption>xy</caption>\n                 <tr><th>cm</th><th>kg</th></tr>\n                 <tr><td>150</td><td>45</td></tr><tr><td>160</td><td>55</td></tr>\n                 <tr><td>170</td><td>65</td></tr><tr><td>180</td><td>75</td></tr>\n               </table>\n             </div>\")))"
+---
+
+                 stacked                              stacked100
+  60 ┤                          ▄▄▄▄▄▄   100% ┤ ▄▄▄▄▄▄  ▄▄▄▄▄▄  ▄▄▄▄▄▄  ▄▄▄▄▄
+     │                          ██████        │ ▀▀▀▀▀▀  ██████  ▀▀▀▀▀▀  █████
+  40 ┤          ▄▄▄▄▄▄  ▀▀▀▀▀▀  ██████        │ ██████  ██████  ██████  █████
+     │          ▀▀▀▀▀▀  ██████  ▀▀▀▀▀▀    50% ┤ ▀▀▀▀▀▀  ▀▀▀▀▀▀  ██████  ▀▀▀▀▀
+  20 ┤ ▀▀▀▀▀▀   ▀▀▀▀▀▀  ██████  ██████        │ ██████  ██████  ██████  █████
+     │ ▀▀▀▀▀▀   ██████  ██████  ██████        │ ██████  ██████  ██████  █████
+   0 └─────────────────────────────────    0% └───────────────────────────────
+         Q1       Q2      Q3      Q4              Q1      Q2      Q3     Q4
+
+      ██ North   ██ South   ██ East          ██ North   ██ South   ██ East
+
+                  area                                    xy
+  100 ┤                                  75 ┤                     ▄          █
+      │                                     │           ▄         ▀
+      │                          ▄▄      50 ┤▄          ▀
+   50 ┤          ▄▄▄▄▄▄▄▄▄▀▀▀▀▀▀▀▀▀         │▀
+      │   ▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀████████         │
+    0 └────────────────────────────────  25 ┤
+          Q1      Q2      Q3      Q4        │
+                                          0 └┬──────────┬─────────┬──────────┬
+      ██ North   ██ South   ██ East         150        160       170       180
+                                            ────────────────Test────────────────
+                                                 ◄◄◄ PgUp • 1/1 • PgDn ►►►

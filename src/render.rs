@@ -215,6 +215,62 @@ mod tests {
         )));
     }
 
+    const QUARTERS: &str = "<tr><th></th><th>North</th><th>South</th><th>East</th></tr>
+        <tr><td>Q1</td><td>12</td><td>8</td><td>5</td></tr>
+        <tr><td>Q2</td><td>18</td><td>11</td><td>9</td></tr>
+        <tr><td>Q3</td><td>25</td><td>14</td><td>7</td></tr>
+        <tr><td>Q4</td><td>31</td><td>12</td><td>15</td></tr>";
+
+    #[test]
+    fn charts_slide() {
+        insta::assert_snapshot!(buffer_text(&single_slide_canvas(&format!(
+            "<style>
+               .row {{ display: flex; gap: 2; margin-bottom: 1 }}
+               .row table {{ flex: 1; height: 11; margin: 0 }}
+               th.light {{ --fill: light }}
+             </style>
+             <div class='row'>
+               <table data-chart='bar'><caption>bar</caption>
+                 <tr><th></th><th class='light'>North</th><th>South</th></tr>
+                 <tr><td>Q1</td><td>12</td><td>8</td></tr>
+                 <tr><td>Q2</td><td>18</td><td>-4</td></tr>
+               </table>
+               <table data-chart='line'><caption>line</caption>{QUARTERS}</table>
+             </div>
+             <div class='row'>
+               <table data-chart='pie' style='height: 10'><caption>pie</caption>{QUARTERS}</table>
+               <table data-chart='hilo' style='height: 10'><caption>hilo</caption>
+                 <tr><th></th><th>High</th><th>Low</th><th>Close</th><th>Open</th></tr>
+                 <tr><td>Mon</td><td>45</td><td>41</td><td>44</td><td>42</td></tr>
+                 <tr><td>Tue</td><td>47</td><td>43</td><td>43.5</td><td>44</td></tr>
+                 <tr><td>Wed</td><td>44</td><td>40</td><td>41</td><td>43</td></tr>
+               </table>
+             </div>"
+        ))));
+    }
+
+    #[test]
+    fn more_charts_slide() {
+        insta::assert_snapshot!(buffer_text(&single_slide_canvas(&format!(
+            "<style>
+               .row {{ display: flex; gap: 2; margin-bottom: 1 }}
+               .row table {{ flex: 1; height: 11; margin: 0 }}
+             </style>
+             <div class='row'>
+               <table data-chart='stacked'><caption>stacked</caption>{QUARTERS}</table>
+               <table data-chart='stacked100'><caption>stacked100</caption>{QUARTERS}</table>
+             </div>
+             <div class='row'>
+               <table data-chart='area' style='height: 10'><caption>area</caption>{QUARTERS}</table>
+               <table data-chart='xy' style='height: 10'><caption>xy</caption>
+                 <tr><th>cm</th><th>kg</th></tr>
+                 <tr><td>150</td><td>45</td></tr><tr><td>160</td><td>55</td></tr>
+                 <tr><td>170</td><td>65</td></tr><tr><td>180</td><td>75</td></tr>
+               </table>
+             </div>"
+        ))));
+    }
+
     #[test]
     fn boxes_slide() {
         insta::assert_snapshot!(buffer_text(&single_slide_canvas(

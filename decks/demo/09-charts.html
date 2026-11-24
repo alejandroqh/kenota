@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+  <title>Charts</title>
+  <style>
+    body { background: blue; }
+    h2 { color: white; }
+    .row { display: flex; gap: 4; margin-bottom: 1; }
+    .row table { flex: 1; height: 14; margin: 0; }
+    caption { color: yellow; }
+  </style>
+</head>
+<body>
+  <h2>Charts</h2>
+  <div class="row">
+    <table data-chart="bar">
+      <caption>Sales by quarter</caption>
+      <tr><th></th><th>North</th><th style="--fill: medium lightgreen">South</th></tr>
+      <tr><td>Q1</td><td>12</td><td>8</td></tr>
+      <tr><td>Q2</td><td>18</td><td>11</td></tr>
+      <tr><td>Q3</td><td>25</td><td>14</td></tr>
+      <tr><td>Q4</td><td>31</td><td>20</td></tr>
+    </table>
+    <table data-chart="pie">
+      <caption>Market share</caption>
+      <tr><th></th><th>Share</th></tr>
+      <tr><td>Works</td><td>45</td></tr>
+      <tr><td>Lotus</td><td>25</td></tr>
+      <tr><td>dBase</td><td>18</td></tr>
+      <tr><td>Other</td><td>12</td></tr>
+    </table>
+  </div>
+  <p>
+    <code>&lt;table data-chart="bar"&gt;</code> draws its data: the header row names the
+    series, the first column holds the categories. Also <code>stacked</code>,
+    <code>stacked100</code>, <code>line</code>, <code>area</code>, <code>hilo</code>,
+    <code>pie</code> and <code>xy</code>; a header cell's <code>background</code> or
+    <code>--fill</code> styles its series.
+  </p>
+</body>
+</html>

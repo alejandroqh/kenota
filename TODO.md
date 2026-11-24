@@ -170,10 +170,10 @@ Notes:
 - Big text wraps between words, follows `text-align`, takes colors from inline elements,
   and leaves blank cells untouched so fills show between letters.
 
-### 5. Pixel canvas
+### 5. Pixel canvas ✅
 - [x] Half-block pixel canvas shared by images and charts
 - [x] `<img>`: decode, scale, quantize to EGA, ordered dithering
-- [ ] Charts: bar, stacked, stacked100, line, area, hilo, pie, xy
+- [x] Charts: bar, stacked, stacked100, line, area, hilo, pie, xy
 
 Notes:
 - `src/pixels.rs`: two pixels per cell (`▀▄█`), transparent pixels keep what is behind.
@@ -184,6 +184,20 @@ Notes:
   picture keeps its shape, with neither it is one pixel per pixel, shrunk to fit.
   `margin: 0 auto` centers it. Missing pictures show `[alt]` and a slide warning.
 - Fonts and pictures travel together as `Assets` (`deck.assets`), passed to layout.
+- Charts: `src/chart.rs` reads the table (first row = series names, first column = categories,
+  or X values for `xy`; empty cells are missing; `1,250`, `$12`, `45%` are numbers), and
+  `src/layout/plot.rs` draws it: caption, value axis with round ticks (`k`/`M` for big numbers),
+  category labels, and a centered legend when there are several series. A pie uses the first
+  series and puts its legend with percentages beside it.
+- A chart fills its container's width like a block; plot height is 10 rows unless the table
+  has a `height`. No frame by default (`table[data-chart] { border: none }`); `border` adds one.
+- Series look comes from the header cell: `background` sets the color, `--fill` draws `░▒▓`
+  (bars then snap to whole cells); otherwise a palette. Pie slices use their first cell.
+- `bar` includes zero and grows down for negatives; `line`/`xy` include zero unless the values
+  bunch far from it; `hilo` and the X axis of `xy` span just their data. `hilo`: a line from the
+  lowest to the highest value, the third series ticks right (close), the fourth left (open).
+- Unknown `data-chart` types and non-numeric values are slide warnings; unknown types draw as
+  a (frameless) table.
 
 ### 6. Animations
 - [ ] Builds (`data-step`, `data-build`), PgDn/PgUp through steps

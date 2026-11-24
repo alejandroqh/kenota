@@ -12,7 +12,7 @@ use super::measure::Intrinsic;
 use super::{Ctx, Item, text_style};
 use crate::assets::Assets;
 use crate::images::Picture;
-use crate::pixels::{Cell, Pixels};
+use crate::pixels::Cell;
 use crate::style::StyledNode;
 
 /// Lays out the picture of `node` at (`x`, `y`), `width` columns wide and
@@ -40,7 +40,7 @@ pub(super) fn layout(
         usize::try_from(rows * 2).unwrap_or(0),
         node.style.dither,
     );
-    pixel_items(&pixels, x, y, &mut ctx.layer.items);
+    cell_items(&pixels.cells(), x, y, &mut ctx.layer.items);
     rows
 }
 
@@ -65,14 +65,15 @@ pub(super) fn intrinsic(node: &StyledNode, assets: &Assets) -> Intrinsic {
     }
 }
 
-/// Text items for a pixel canvas whose top-left cell is (`x`, `y`): one
-/// item per run of cells with the same colors. Transparent cells are skipped.
-pub(super) fn pixel_items(pixels: &Pixels, x: i32, y: i32, out: &mut Vec<Item>) {
+/// Text items for the cells of a pixel canvas whose top-left cell is
+/// (`x`, `y`): one item per run of cells with the same colors. Empty
+/// cells are skipped.
+pub(super) fn cell_items(cells: &[Vec<Option<Cell>>], x: i32, y: i32, out: &mut Vec<Item>) {
     let style = |cell: &Cell| {
         let style = Style::new().fg(cell.fg.color());
         cell.bg.map_or(style, |bg| style.bg(bg.color()))
     };
-    for (row_y, row) in (y..).zip(pixels.cells()) {
+    for (row_y, row) in (y..).zip(cells) {
         let mut column = 0;
         while column < row.len() {
             let Some(first) = &row[column] else {

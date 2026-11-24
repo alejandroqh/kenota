@@ -55,6 +55,25 @@ impl StyledNode {
         }
         self.children.iter().find_map(|child| child.find(tag))
     }
+
+    /// The text inside, with whitespace collapsed to single spaces and
+    /// trimmed at both ends.
+    pub fn text(&self) -> String {
+        fn collect(node: &StyledNode, out: &mut String) {
+            match &node.content {
+                Content::Text(text) => out.push_str(text),
+                Content::Element { .. } => {
+                    out.push(' ');
+                    for child in &node.children {
+                        collect(child, out);
+                    }
+                }
+            }
+        }
+        let mut raw = String::new();
+        collect(self, &mut raw);
+        raw.split_whitespace().collect::<Vec<_>>().join(" ")
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]

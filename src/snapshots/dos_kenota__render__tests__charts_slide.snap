@@ -1,0 +1,29 @@
+---
+source: src/render.rs
+expression: "buffer_text(&single_slide_canvas(&format!(\"<style>\n               .row {{ display: flex; gap: 2; margin-bottom: 1 }}\n               .row table {{ flex: 1; height: 11; margin: 0 }}\n               th.light {{ --fill: light }}\n             </style>\n             <div class='row'>\n               <table data-chart='bar'><caption>bar</caption>\n                 <tr><th></th><th class='light'>North</th><th>South</th></tr>\n                 <tr><td>Q1</td><td>12</td><td>8</td></tr>\n                 <tr><td>Q2</td><td>18</td><td>-4</td></tr>\n               </table>\n               <table data-chart='line'><caption>line</caption>{QUARTERS}</table>\n             </div>\n             <div class='row'>\n               <table data-chart='pie' style='height: 10'><caption>pie</caption>{QUARTERS}</table>\n               <table data-chart='hilo' style='height: 10'><caption>hilo</caption>\n                 <tr><th></th><th>High</th><th>Low</th><th>Close</th><th>Open</th></tr>\n                 <tr><td>Mon</td><td>45</td><td>41</td><td>44</td><td>42</td></tr>\n                 <tr><td>Tue</td><td>47</td><td>43</td><td>43.5</td><td>44</td></tr>\n                 <tr><td>Wed</td><td>44</td><td>40</td><td>41</td><td>43</td></tr>\n               </table>\n             </div>\")))"
+---
+
+                   bar                                   line
+   20 ┤                   ░░░░░          40 ┤
+      │                   ░░░░░             │                          ▄▄▄
+   10 ┤   ░░░░░█████      ░░░░░             │                  ▄▄▄▄▀▀▀▀
+      │   ░░░░░█████      ░░░░░          20 ┤          ▄▄▄▄▀▀▀▀
+    0 ┤                                     │    ▄▄▀▀▀▀▄▄▄▄▄▄▀▀▀▀▀▀▀▀▄▄▀▀▀
+      │                        █████        │    ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  -10 └────────────────────────────────   0 └─────────────────────────────────
+              Q1              Q2                Q1       Q2      Q3      Q4
+
+           ░░ North   ██ South               ██ North   ██ South   ██ East
+
+                   pie                                   hilo
+         ▄▄██████▄▄                      50 ┤
+       ▄████████████▄                       │
+      ████████████▀███    ██ Q1  14%        │                ▄
+     ███████████▀██████   ██ Q2  21%        │                █
+     ████████▀▀████████   ██ Q3  29%     45 ┤     █▄▄      ▄▄█          ▄
+     ██████▀████▀██████   ██ Q4  36%        │     █          ▀▀▀      ▀▀█
+      ███▀█████████▀██                      │   ▀▀█                     █▄▄
+       ▀████████████▀                    40 └─────────────────────────────────
+         ▀▀██████▀▀                              Mon        Tue        Wed
+                                            ────────────────Test────────────────
+                                                 ◄◄◄ PgUp • 1/1 • PgDn ►►►

@@ -2,16 +2,16 @@
 //!
 //! Each character cell shows two pixels, one above the other, with the
 //! half blocks `▀` and `▄`: an 80×25 slide is 80×50 pixels. Pixels are
-//! EGA colors or transparent; a transparent half leaves whatever is
-//! behind the cell showing.
+//! EGA colors (or, for charts, richer inks) or transparent; a transparent
+//! half leaves whatever is behind the cell showing.
 
 use crate::palette::Ega;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Pixels {
+pub struct Pixels<T = Ega> {
     width: usize,
     height: usize,
-    data: Vec<Option<Ega>>,
+    data: Vec<Option<T>>,
 }
 
 /// One character cell of a pixel canvas.
@@ -23,7 +23,7 @@ pub struct Cell {
     pub bg: Option<Ega>,
 }
 
-impl Pixels {
+impl<T: Copy> Pixels<T> {
     /// A transparent canvas.
     pub fn new(width: usize, height: usize) -> Self {
         Self {
@@ -41,7 +41,7 @@ impl Pixels {
         self.height
     }
 
-    pub fn get(&self, x: usize, y: usize) -> Option<Ega> {
+    pub fn get(&self, x: usize, y: usize) -> Option<T> {
         if x < self.width && y < self.height {
             self.data[y * self.width + x]
         } else {
@@ -50,15 +50,18 @@ impl Pixels {
     }
 
     /// Sets one pixel; coordinates off the canvas are ignored.
-    pub fn set(&mut self, x: usize, y: usize, color: Option<Ega>) {
+    pub fn set(&mut self, x: usize, y: usize, value: Option<T>) {
         if x < self.width && y < self.height {
-            self.data[y * self.width + x] = color;
+            self.data[y * self.width + x] = value;
         }
     }
 
     /// The cells that show the canvas, row by row: `ceil(height / 2)` rows
-    /// of `width` cells. `None` where both pixels are transparent.
-    pub fn cells(&self) -> Vec<Vec<Option<Cell>>> {
+    /// of `width` cells, each made by `cell` from its top and bottom pixel.
+    pub fn cells_with(
+        &self,
+        cell: impl Fn(Option<T>, Option<T>) -> Option<Cell>,
+    ) -> Vec<Vec<Option<Cell>>> {
         (0..self.height.div_ceil(2))
             .map(|row| {
                 (0..self.width)
@@ -69,8 +72,15 @@ impl Pixels {
     }
 }
 
+impl Pixels {
+    /// The cells that show the canvas. `None` where both pixels are transparent.
+    pub fn cells(&self) -> Vec<Vec<Option<Cell>>> {
+        self.cells_with(cell)
+    }
+}
+
 /// The cell for a top and a bottom pixel.
-fn cell(top: Option<Ega>, bottom: Option<Ega>) -> Option<Cell> {
+pub fn cell(top: Option<Ega>, bottom: Option<Ega>) -> Option<Cell> {
     let (symbol, fg, bg) = match (top, bottom) {
         (None, None) => return None,
         (Some(top), None) => ('▀', top, None),

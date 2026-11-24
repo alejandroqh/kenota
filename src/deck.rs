@@ -186,6 +186,7 @@ impl Slide {
     pub fn parse(path: PathBuf, source: &str, deck_css: Option<&str>, fonts: &Fonts) -> Slide {
         let mut parsed = html::parse(source, deck_css);
         check_fonts(&parsed.root, fonts, &mut parsed.warnings);
+        crate::chart::check(&parsed.root, &mut parsed.warnings);
         let title = parsed.title.unwrap_or_else(|| {
             path.file_stem()
                 .map(|s| s.to_string_lossy().into_owned())
