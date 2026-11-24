@@ -1,4 +1,5 @@
-//! The demo deck must load cleanly and fit on screen.
+//! The bundled decks must load cleanly and fit on screen: the demo deck and
+//! the starter deck that ships with the Claude Code skill.
 
 use std::path::Path;
 
@@ -7,9 +8,8 @@ use dos_kenota::layout;
 use dos_kenota::render::FOOTER_ROWS;
 use ratatui::layout::Rect;
 
-#[test]
-fn demo_deck_has_no_warnings_and_fits() {
-    let deck = Deck::load(&Path::new(env!("CARGO_MANIFEST_DIR")).join("decks/demo")).unwrap();
+fn assert_clean_and_fits(folder: &str) {
+    let deck = Deck::load(&Path::new(env!("CARGO_MANIFEST_DIR")).join(folder)).unwrap();
     let size = deck.config.size;
     let content = Rect::new(0, 0, size.width, size.height - FOOTER_ROWS);
 
@@ -23,4 +23,14 @@ fn demo_deck_has_no_warnings_and_fits() {
             content.height
         );
     }
+}
+
+#[test]
+fn demo_deck_has_no_warnings_and_fits() {
+    assert_clean_and_fits("decks/demo");
+}
+
+#[test]
+fn skill_starter_deck_has_no_warnings_and_fits() {
+    assert_clean_and_fits("skills/dos-kenota/assets/starter-deck");
 }

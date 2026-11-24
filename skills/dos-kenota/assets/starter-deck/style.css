@@ -1,0 +1,65 @@
+/* Works tutorial kit for dos-kenota.
+ *
+ * Copy this file into a deck as style.css; every slide gets these classes.
+ * Plain numbers are character cells. The slide area is 80×23 (the footer
+ * takes the last two rows of the 80×25 screen).
+ */
+
+/* Full-bleed slides: bands and fields reach the screen edges. */
+body { margin: 0; background: blue; color: lightgray; }
+
+/* The dithered blue backdrop of the tutorials. Put it on <body> to cover
+   the whole slide, or on a block for one area. */
+.field { background: blue; --fill: medium lightblue; }
+/* The grey dithered sky of the picture scenes. */
+.sky { background: lightgray; --fill: medium darkgray; }
+
+/* Black strip across the top that carries the narration. */
+.band { background: black; color: white; padding: 1 3; }
+.band p { margin: 0; }
+
+/* Light grey panel with a black drop shadow: narration, notes, charts. */
+.panel { background: lightgray; color: black; padding: 1 2; box-shadow: 2 1; }
+.panel p { margin: 0; }
+.panel p + p { margin-top: 1; }
+
+/* A centred dialog box with a double frame. `margin: 0 auto` centres the
+   box alone; `left: -1` moves it one column left so that box + shadow are
+   centred (the shadow adds 2 columns on the right). */
+.dialog {
+  width: 50; margin: 0 auto; padding: 1 2;
+  position: relative; left: -1;
+  background: lightgray; color: black;
+  border: double; box-shadow: 2 1; text-align: center;
+}
+.dialog p { margin: 0; }
+
+/* Gallery cards: a picture with a bright label at the bottom. */
+.grid { display: flex; gap: 4; }
+.grid + .grid { margin-top: 2; }
+.card {
+  flex: 1; padding: 1 1 0 1;
+  background: lightgray; color: black; box-shadow: 2 1;
+  text-align: center;
+}
+/* Art keeps its own spacing: a centred box would centre each line. */
+.card pre { margin: 0 auto; text-align: left; }
+.card .label { margin: 0; color: white; font-weight: bold; }
+
+/* Key caps and highlighted words inside grey panels. Bold would turn blue
+   into lightblue, which is hard to read on grey, so `b` stays normal. */
+.panel kbd, .dialog kbd { background: black; color: white; }
+.panel b, .dialog b { color: blue; font-weight: normal; }
+
+/* A program's screen for software lessons: use on <pre> so columns and
+   spacing stay as typed. */
+.screen { margin: 0; padding: 1 2; background: black; color: lightgray; }
+
+/* Colors for drawing with block characters inside <pre>. */
+.k { color: darkgray; }
+.b { color: blue; }
+.c { color: cyan; }
+.m { color: magenta; }
+.r { color: red; }
+.y { color: yellow; }
+.w { color: white; }

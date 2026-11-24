@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+  <title>Charting the Order</title>
+  <style>
+    .work { display: flex; gap: 4; padding: 2 5 2 3; }
+    .chart-panel { flex: 3; padding: 1 2 0 2; }
+    /* height is the whole chart: caption 1 + plot 7 + axis 1 + labels 1
+       + legend 2 (a gap and one line of entries). */
+    .chart-panel table { height: 12; margin: 0; }
+    /* Not bold: bold blue is lightblue, too pale on grey. */
+    .chart-panel caption { color: blue; }
+    .steps { flex: 2; }
+    .steps ol { margin: 0; padding-left: 0; }
+    .steps li + li { margin-top: 1; }
+  </style>
+</head>
+<body class="field">
+  <div class="band">
+    <p>Once the numbers are in the spreadsheet,</p>
+    <p>one command turns them into a chart.</p>
+  </div>
+  <div class="work">
+    <div class="panel chart-panel">
+      <table data-chart="bar">
+        <caption>Loaves ordered</caption>
+        <tr><th></th><th style="background: blue">Bread</th><th style="background: magenta">Rolls</th></tr>
+        <tr><td>Mon</td><td>40</td><td>25</td></tr>
+        <tr><td>Tue</td><td>35</td><td>30</td></tr>
+        <tr><td>Wed</td><td>50</td><td>20</td></tr>
+        <tr><td>Thu</td><td>45</td><td>35</td></tr>
+        <tr><td>Fri</td><td>60</td><td>40</td></tr>
+      </table>
+    </div>
+    <div class="panel steps">
+      <ol data-build>
+        <li>Select the numbers, labels included.</li>
+        <li>Choose <b>New Chart</b> from the View menu.</li>
+        <li>Press <kbd>Esc</kbd> to go back to the spreadsheet.</li>
+      </ol>
+    </div>
+  </div>
+</body>
+</html>

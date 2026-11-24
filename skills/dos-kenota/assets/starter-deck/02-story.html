@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+  <title>Your Job</title>
+  <meta name="transition" content="wipe-down">
+  <style>
+    /* A street scene built from boxes: every piece is placed in cells with
+       position:absolute, back to front, and patterned with --fill. */
+    .scene div { position: absolute; }
+
+    /* Far-off city: dark blue blocks against the grey sky. */
+    .city { background: lightgray; --fill: dark blue; }
+
+    /* Left shop: striped awning, blue front, black windows, a door. */
+    .awning { background: red; --fill: "▌" lightred; }
+    .trim { background: red; --fill: "♦" yellow; }
+    .front-blue { background: blue; --fill: light lightblue; }
+    .window { background: black; }
+    .door { background: darkgray; }
+    .sign-bakery { background: blue; color: yellow; font-weight: bold; text-align: center; }
+
+    /* Middle shop: magenta wall and a cyan sign with a ruled frame. */
+    .wall-magenta { background: magenta; --fill: light lightmagenta; }
+    .sign-books { background: cyan; color: white; text-align: center; }
+
+    /* Right shop: grey front and a flower stall. */
+    .front-grey { background: lightgray; --fill: light darkgray; }
+    .sign-flowers { background: magenta; color: yellow; font-weight: bold; text-align: center; }
+    .flowers { background: cyan; --fill: "▄" lightred; }
+
+    /* Street. */
+    .street { background: blue; --fill: "▀" lightblue; }
+
+    /* The narration panel sits on top of the scene. */
+    .story { position: absolute; top: 1; left: 33; width: 44; z-index: 1; }
+  </style>
+</head>
+<body class="sky">
+  <div class="scene">
+    <div class="city" style="left: 2; top: 3; width: 6; height: 7"></div>
+    <div class="city" style="left: 9; top: 5; width: 5; height: 5"></div>
+    <div class="city" style="left: 15; top: 2; width: 4; height: 8"></div>
+    <div class="city" style="left: 20; top: 6; width: 8; height: 4"></div>
+
+    <!-- left shop: the bakery -->
+    <div class="awning" style="left: 0; top: 10; width: 22; height: 3"></div>
+    <div class="trim" style="left: 0; top: 13; width: 22; height: 1"></div>
+    <div class="front-blue" style="left: 0; top: 14; width: 22; height: 7"></div>
+    <div class="sign-bakery" style="left: 3; top: 15; width: 16; height: 1">BAKERY</div>
+    <div class="window" style="left: 2; top: 17; width: 6; height: 3"></div>
+    <div class="door" style="left: 10; top: 17; width: 4; height: 4"></div>
+    <div class="window" style="left: 16; top: 17; width: 4; height: 3"></div>
+
+    <!-- middle shop: the bookshop -->
+    <div class="wall-magenta" style="left: 23; top: 8; width: 20; height: 13"></div>
+    <div class="sign-books" style="left: 24; top: 13; width: 18; height: 3">══ Ocean Books ══<br>since 1961</div>
+    <div class="window" style="left: 25; top: 17; width: 7; height: 3"></div>
+    <div class="door" style="left: 35; top: 17; width: 5; height: 4"></div>
+
+    <!-- right shop: the florist -->
+    <div class="front-grey" style="left: 44; top: 12; width: 36; height: 9"></div>
+    <div class="sign-flowers" style="left: 50; top: 13; width: 24; height: 1">FRESH FLOWERS</div>
+    <div class="window" style="left: 47; top: 15; width: 8; height: 4"></div>
+    <div class="door" style="left: 58; top: 16; width: 5; height: 5"></div>
+    <div class="flowers" style="left: 66; top: 16; width: 12; height: 4"></div>
+
+    <div class="street" style="left: 0; top: 21; width: 80; height: 2"></div>
+  </div>
+
+  <div class="story panel">
+    <p data-effect="typewriter">You run the Harbor Street Bakery. Every
+      Friday you send your suppliers the order for the coming week.</p>
+    <p data-step data-effect="typewriter">In this lesson you'll use Works to
+      plan that order, chart it, and write the cover letter.</p>
+  </div>
+</body>
+</html>

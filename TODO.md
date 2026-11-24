@@ -237,3 +237,13 @@ Notes:
 - [ ] `render <deck> --slide N`: print a slide as ANSI to stdout
 - [ ] Jump to slide by typing its number + Enter
 - [ ] Example deck recreating both MS Works screenshots
+- [x] Claude Code skill (`skills/dos-kenota`): Works style guide, every component, layout
+      balance, animation advice, a starter deck, and `preview.sh` to see a slide as text
+      or as color grids through tmux (until `render` exists)
+
+Notes:
+- The skill's starter deck is loaded by `tests/demo_deck.rs` like the demo deck, so engine
+  changes that break it (warnings, slides too tall) fail the tests.
+- Things the skill documents as workarounds, worth fixing in the engine: warnings are
+  invisible (`check`), charts can't build bar by bar, and `data-build` on a table also
+  hides the header row.
