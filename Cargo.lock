@@ -902,6 +902,7 @@ dependencies = [
  "color-eyre",
  "image",
  "insta",
+ "png",
  "ratatui",
  "scraper",
  "serde",

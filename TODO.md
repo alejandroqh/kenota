@@ -254,6 +254,11 @@ Notes:
   than its box on purpose) doesn't. Each edge is reported once, with the farthest row or
   column and the first text found there. Prints `file: message` lines and a summary; exit
   code 1 when there are problems. A bad `deck.toml` is an error, as when presenting.
+- `render --png FILE [--scale N]` (`src/screenshot.rs`): one slide as a picture, 8×16 pixels a
+  cell (640×400 for 80×25), drawn with the Spleen 8×16 BDF font (`src/fonts/spleen-8x16.bdf`,
+  BSD-2-Clause, `src/fonts/LICENSE-spleen`) plus kenota's own ► ◄ ▪, which Spleen lacks.
+  Saved as a 4-bit palette PNG (a few KB). The README pictures come from `decks/readme`
+  (`docs/readme-N.png`, `--scale 2`); regenerate them when the look changes.
 - Unsupported tags warn once per slide and kind (`src/html.rs`): `script`, `svg`/`canvas`,
   media and embeds, form controls.
 - The skill's starter deck and the demo deck must pass `check` (`tests/demo_deck.rs`);

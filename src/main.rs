@@ -14,6 +14,7 @@ use kenota::app::App;
 use kenota::check;
 use kenota::deck::Deck;
 use kenota::render;
+use kenota::screenshot;
 use ratatui::DefaultTerminal;
 use ratatui::crossterm::event::{self, Event};
 
@@ -78,6 +79,21 @@ struct RenderArgs {
     /// How to output colors; `none` prints plain text
     #[arg(long, value_enum, default_value_t = RenderColors::Auto)]
     colors: RenderColors,
+
+    /// Save the slide as a PNG picture instead of printing it (8×16 pixels
+    /// per cell, 640×400 for an 80×25 deck)
+    #[arg(
+        long,
+        value_name = "FILE",
+        requires = "slide",
+        conflicts_with = "colors"
+    )]
+    png: Option<PathBuf>,
+
+    /// Enlarge every pixel of the PNG this many times
+    #[arg(long, value_name = "N", default_value_t = 1, requires = "png",
+          value_parser = clap::value_parser!(u32).range(1..=8))]
+    scale: u32,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -204,6 +220,11 @@ fn render_slides(args: &RenderArgs) -> Result<()> {
             },
         };
         let canvas = render::draw(&deck, index, &render::compile(&deck, index), &clock);
+        if let Some(path) = &args.png {
+            let file = std::io::BufWriter::new(std::fs::File::create(path)?);
+            screenshot::screenshot(&canvas, args.scale).write_png(file)?;
+            return Ok(());
+        }
         text.push_str(&ansi::to_ansi(&canvas, mode));
     }
     match io::stdout().lock().write_all(text.as_bytes()) {

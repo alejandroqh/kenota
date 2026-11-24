@@ -72,6 +72,11 @@ scripts/preview.sh <deck> 3 --step 2 --time 0.5     # half a second after step 2
     blinking text on, marquees at the start, the first frame;
   - so the same command always gives the same picture.
 
+To see a slide as a picture, exactly as it looks on screen, save a PNG and
+open it (your file-reading tool shows images):
+`scripts/preview.sh <deck> 3 --png /tmp/slide-3.png`. Do this for picture
+scenes and anything where colors and shapes matter more than text.
+
 The engine also runs directly: `kenota render <deck> [--slide N]
 [--step N] [--time S] [--colors none|truecolor|ansi16]` prints slides (every
 slide when `--slide` is left out), and `kenota check <deck>` lists

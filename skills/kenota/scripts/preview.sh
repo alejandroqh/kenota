@@ -4,6 +4,7 @@
 #
 #   preview.sh <deck> [slide] [--step N] [--time SECONDS]
 #              [--map | --grid text,bg,fg] [--rows FIRST-LAST] [--color | --plain]
+#              [--png FILE]
 #
 #   slide       slide number, from 1 (default 1)
 #   --step N    build step to show, from 0 (default: the last, all showing)
@@ -15,12 +16,13 @@
 #   --rows R    only canvas rows R (`5-12` or `7`)
 #   --color     the raw output of `kenota render`, with color codes
 #   --plain     plain text without numbers or colors
+#   --png FILE  save the slide as a picture (1280×800) and print its path
 #
 # The engine is found by engine.sh next to this script.
 set -euo pipefail
 
 usage() {
-  sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
   exit 2
 }
 
@@ -31,6 +33,7 @@ render_args=()
 grid="text"
 rows="0-999"
 raw=""
+png=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --step) render_args+=(--step "${2:?--step needs a number}"); shift 2 ;;
@@ -40,6 +43,7 @@ while [ $# -gt 0 ]; do
     --rows) rows="${2:?--rows needs FIRST-LAST}"; shift 2 ;;
     --color) raw="truecolor"; shift ;;
     --plain) raw="none"; shift ;;
+    --png) png="${2:?--png needs a file}"; shift 2 ;;
     -h|--help) usage ;;
     -*) echo "unknown option $1" >&2; usage ;;
     *)
@@ -55,7 +59,11 @@ engine="$("$here/engine.sh")"
 render() {
   "$engine" render "$deck" --slide "$slide" ${render_args[@]+"${render_args[@]}"} --colors "$1"
 }
-if [ -n "$raw" ]; then
+if [ -n "$png" ]; then
+  "$engine" render "$deck" --slide "$slide" ${render_args[@]+"${render_args[@]}"} \
+    --png "$png" --scale 2
+  echo "$png"
+elif [ -n "$raw" ]; then
   render "$raw"
 else
   render truecolor | python3 "$here/colormap.py" --grid "$grid" --rows "$rows"

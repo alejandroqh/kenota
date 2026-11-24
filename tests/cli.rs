@@ -64,6 +64,36 @@ fn render_colors_and_every_slide() {
 }
 
 #[test]
+fn render_saves_a_png() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("slide.png");
+    let file = path.to_str().unwrap();
+    let output = run(&[
+        "render",
+        "decks/demo",
+        "-s",
+        "9",
+        "--png",
+        file,
+        "--scale",
+        "2",
+    ]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let picture = image::open(&path).unwrap();
+    assert_eq!((picture.width(), picture.height()), (1280, 800));
+    // A PNG is one slide: --slide is required.
+    assert!(
+        !run(&["render", "decks/demo", "--png", file])
+            .status
+            .success()
+    );
+}
+
+#[test]
 fn check_passes_a_clean_deck_and_fails_a_broken_one() {
     let clean = run(&["check", "decks/demo"]);
     assert!(clean.status.success());

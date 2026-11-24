@@ -21,4 +21,5 @@ pub mod layout;
 pub mod palette;
 pub mod pixels;
 pub mod render;
+pub mod screenshot;
 pub mod style;

@@ -1,5 +1,5 @@
-//! The bundled decks must pass `kenota check`: the demo deck and the
-//! starter deck that ships with the Claude Code skill.
+//! The bundled decks must pass `kenota check`: the demo deck, the deck the
+//! README pictures come from, and the Claude Code skill's starter deck.
 
 use std::path::Path;
 
@@ -15,6 +15,11 @@ fn assert_no_problems(folder: &str) {
 #[test]
 fn demo_deck_has_no_problems() {
     assert_no_problems("decks/demo");
+}
+
+#[test]
+fn readme_deck_has_no_problems() {
+    assert_no_problems("decks/readme");
 }
 
 #[test]

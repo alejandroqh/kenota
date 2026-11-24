@@ -2,12 +2,20 @@
 name = "kenota"
 version = "0.1.0"
 edition = "2024"
+description = "Text-mode presentation engine: HTML slides drawn like the 1988 MS Works DOS tutorials"
 license = "Apache-2.0"
+repository = "https://github.com/alejandroqh/kenota"
+readme = "README.md"
+keywords = ["presentation", "slides", "tui", "terminal", "ansi"]
+categories = ["command-line-utilities", "visualization"]
+# The README pictures are loaded from the repository.
+exclude = ["docs/"]
 
 [dependencies]
 clap = { version = "4.6.9", features = ["derive"] }
 color-eyre = "0.6.5"
 image = { version = "0.25.10", default-features = false, features = ["png", "gif"] }
+png = "0.18.1"
 ratatui = "0.30.2"
 scraper = "0.29.0"
 serde = { version = "1.0.229", features = ["derive"] }
