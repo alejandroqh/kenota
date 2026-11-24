@@ -93,7 +93,7 @@ def main():
     drawing = Path(sys.argv[1])
     out = Path(sys.argv[2]) if len(sys.argv) == 3 else drawing.with_suffix(".png")
     width, height = write_png(out, read_drawing(drawing))
-    src = f"img/{out.name}" if out.parent.name == "img" else out.name
+    src = f"img/{out.name}" if out.resolve().parent.name == "img" else out.name
     print(f"{out}: {width} × {height} pixels, {width} columns × {height // 2} rows")
     print(f'<img src="{src}" width="{width}" alt="">')
 

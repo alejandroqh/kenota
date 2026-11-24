@@ -1,0 +1,13 @@
+# Three eggs in a basket, 18 × 12 pixels.
+..................
+..WW....WW....WW..
+.WWWW..WWWW..WWWW.
+.WWWW..WWWW..WWWW.
+yyyyyyyyyyyyyyyyyy
+.YyYyYyYyYyYyYyYy.
+.yYyYyYyYyYyYyYyY.
+..YyYyYyYyYyYyYy..
+..yYyYyYyYyYyYyY..
+...yyyyyyyyyyyy...
+..................
+..................

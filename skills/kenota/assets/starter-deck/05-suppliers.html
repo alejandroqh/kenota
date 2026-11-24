@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <title>Suppliers</title>
+  <style>
+    /* Rows: band 0-3, cards 6-17 (padding, picture 6 rows, gap, name and
+       2 lines, padding), shadow 18. Columns: .trio in style.css, 3 cards
+       of 22 and 2 gaps of 3. The pictures are 18 × 12 pixel art, drawn in
+       img/*.txt and turned into PNGs with scripts/pixelart.py. Each card
+       comes on its own PgDn, left to right. */
+  </style>
+</head>
+<body class="field">
+  <div class="band">
+    <p>Three suppliers fill the bakery's order.</p>
+    <p>Each card shows what they bring, and when.</p>
+  </div>
+  <div class="trio">
+    <div class="panel">
+      <img src="img/flour.png" width="18" alt="Flour">
+      <p><span class="name">Mill Road Flour</span><br>40 sacks of flour<br>every Monday</p>
+    </div>
+    <div class="panel" data-step>
+      <img src="img/milk.png" width="18" alt="Milk">
+      <p><span class="name">Hill Farm Dairy</span><br>60 bottles of milk<br>every Tuesday</p>
+    </div>
+    <div class="panel" data-step>
+      <img src="img/eggs.png" width="18" alt="Eggs">
+      <p><span class="name">Green Hens</span><br>30 dozen eggs<br>every Thursday</p>
+    </div>
+  </div>
+</body>
+</html>

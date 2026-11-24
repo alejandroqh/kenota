@@ -405,6 +405,19 @@ These assume the starter kit `style.css` (`assets/starter-deck/style.css`).
 </div>
 ```
 
+**Three cards with pictures** (`.trio`: 3 cards of 22, 18 columns inside;
+pictures up to 18 pixels wide, an even number tall):
+```html
+<div class="trio">
+  <div class="panel">
+    <img src="img/flour.png" width="18" alt="Flour">
+    <p><span class="name">Mill Road Flour</span><br>40 sacks of flour<br>every Monday</p>
+  </div>
+  <div class="panel" data-step> <!-- picture, name, lines --> </div>
+  <div class="panel" data-step> <!-- picture, name, lines --> </div>
+</div>
+```
+
 **Two columns** (60/40, both shadowed):
 ```html
 <div style="display: flex; gap: 4; padding: 2 5 2 3">

@@ -12,7 +12,7 @@ kenota/
 │   ├── works-style.md          the Works look: palette, compositions, narration, block pictures
 │   ├── components.md           every element, CSS property and attribute, plus copy-paste pieces
 │   └── animation.md            builds, transitions, text effects, frames, pacing
-├── assets/starter-deck/        Works kit style.css, deck.toml and four example slides
+├── assets/starter-deck/        Works kit style.css, deck.toml and five example slides
 └── scripts/
     ├── preview.sh              a slide as a numbered text grid or color grids (via `render`)
     ├── sheet.sh                every slide of a deck in one picture

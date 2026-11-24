@@ -22,10 +22,10 @@ describes it in detail.
    a short narration (2–5 lines) and one visual that shows it. Write the
    slide list first (file name, title, the one thing it shows).
 2. **Set up the deck folder.** Copy `assets/starter-deck/style.css` (the Works
-   kit: `.field`, `.band`, `.panel`, `.dialog`, `.grid`/`.card`, `.sky`) and
-   `deck.toml` into the new folder. Name slides `01-intro.html`,
+   kit: `.field`, `.band`, `.panel`, `.dialog`, `.grid`/`.card`, `.trio`,
+   `.sky`) and `deck.toml` into the new folder. Name slides `01-intro.html`,
    `02-....html`; they play in natural filename order. The starter slides are
-   worked examples of the four main layouts: open them when building a
+   worked examples of the five main layouts: open them when building a
    similar slide.
 3. **Sketch each slide in cells** before writing HTML: decide where the band,
    field and boxes go, and add up the rows and columns (see *Layout and
@@ -287,13 +287,15 @@ These came up in practice:
 - `references/animation.md`: builds, transitions, effects and frames, with
   timings and pacing advice. Read it before adding motion.
 - `assets/starter-deck/`: the Works kit `style.css` (`.field`, `.sky`,
-  `.band`, `.panel`, `.dialog`, `.grid`/`.card`, `pre.screen`, and the color
-  classes `.k .b .c .m .r .y .w` for block art), a `deck.toml`, and four
-  example slides:
+  `.band`, `.panel`, `.dialog`, `.grid`/`.card`, `.trio`, `pre.screen`, and
+  the color classes `.k .b .c .m .r .y .w` for block art), a `deck.toml`,
+  and five example slides:
   - title dialog;
   - a picture scene with narration and typewriter;
   - a gallery of 8 cards;
-  - a chart with a build list.
+  - a chart with a build list;
+  - three cards with pixel-art pictures, drawn in `img/*.txt` and made with
+    `scripts/pixelart.py`.
 - `scripts/preview.sh`: shows a slide as a numbered text grid or as color
   grids; `scripts/check.sh` lists a deck's problems; `scripts/engine.sh`
   finds or builds the engine; `scripts/colormap.py` turns colored output

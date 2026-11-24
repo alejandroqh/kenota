@@ -48,6 +48,18 @@ body { margin: 0; background: blue; color: lightgray; }
 .card pre { margin: 0 auto; text-align: left; }
 .card .label { margin: 0; color: white; font-weight: bold; }
 
+/* Three cards with a picture on top, a bright name and two or three
+   lines: people, places, options. 3 × 22 + 2 gaps of 3 = 72 columns inside
+   `padding: 2 5 2 3`, so the field shows 3 columns on both sides once the
+   shadows are counted. A card is 18 columns inside: draw its picture 18
+   pixels wide or less, with an even height (scripts/pixelart.py), and give
+   the <img> its width in pixels. */
+.trio { display: flex; gap: 3; padding: 2 5 2 3; }
+.trio > .panel { width: 22; text-align: center; }
+.trio img { margin: 0 auto; }
+.trio img + p { margin-top: 1; }
+.trio .name { color: white; font-weight: bold; }
+
 /* Key caps and highlighted words inside grey panels. Bold would turn blue
    into lightblue, which is hard to read on grey, so `b` stays normal. */
 .panel kbd, .dialog kbd { background: black; color: white; }

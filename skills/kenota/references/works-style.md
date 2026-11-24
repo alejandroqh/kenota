@@ -119,7 +119,13 @@ Each pattern has a starter slide you can copy.
 4. **Narrated work** (`04-chart.html`):
    - band, then two panels side by side: the visual (chart, table, screen
      mock) at 60%, numbered steps at 40%, built one by one.
-5. **Screen mock** (for software lessons): draw the program instead of a
+5. **Narrated trio** (`05-suppliers.html`):
+   - band, then three equal cards (`.trio`), each with a pixel-art picture,
+     a bright name and two or three lines;
+   - use it for people, places, suppliers or options; three reads at a
+     glance where eight would be a catalogue;
+   - reveal the cards left to right, one per PgDn.
+6. **Screen mock** (for software lessons): draw the program instead of a
    screenshot.
    - A lightgray menu bar on row 0 with black text, and the active menu as
      a framed lightgray box dropping down with a shadow.
@@ -127,7 +133,7 @@ Each pattern has a starter slide you can copy.
      cyan at the bottom.
    - Then point at things with a stamp (`position: absolute`, red or yellow
      background) or a build step.
-6. **Summary**: a single panel or dialog listing 3–4 points, with the band
+7. **Summary**: a single panel or dialog listing 3–4 points, with the band
    saying what comes next.
 
 To vary a deck, alternate patterns. Two galleries in a row feel like a
