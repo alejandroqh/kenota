@@ -1,0 +1,12 @@
+{
+  "name": "kenota",
+  "description": "Text-mode presentations drawn like the 1988 MS Works DOS tutorials",
+  "owner": { "name": "alejandroqh" },
+  "plugins": [
+    {
+      "name": "kenota",
+      "source": "./",
+      "description": "A skill that writes, checks and previews kenota decks in the Works tutorial style"
+    }
+  ]
+}

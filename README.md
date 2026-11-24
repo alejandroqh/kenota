@@ -23,6 +23,20 @@ kenota check decks/demo          # list problems in a deck
 kenota render decks/demo -s 3    # print a slide; --png FILE saves a picture
 ```
 
+## Claude Code skill
+
+kenota comes with a [skill](skills/) that teaches Claude Code the Works style:
+Claude writes the slides, runs `kenota check` and looks at every slide before
+handing the deck over. With kenota installed, add the skill with one command:
+
+```sh
+claude plugin install kenota --marketplace alejandroqh/kenota
+```
+
+Inside Claude Code, the same command is `/plugin install kenota --marketplace alejandroqh/kenota`.
+Then start a new session and ask for a deck: *"make a kenota deck about our Q3 sales"*.
+To update it later, run `claude plugin marketplace update kenota && claude plugin update kenota@kenota`.
+
 ## Tutorial
 
 A deck is a folder with one HTML file per slide. Save this as `hello/01-hello.html`:
@@ -61,8 +75,8 @@ Add `02-next.html` for the next slide (slides play in file-name order), a
 `style.css` that every slide shares, and a `deck.toml` with `transition = "dissolve"`.
 [components.md](skills/kenota/references/components.md) lists every tag and
 CSS property kenota understands, and `decks/demo` uses them all. Or let
-Claude write the deck: the [Claude Code skill](skills/) knows the style and
-checks its own slides.
+Claude write the deck: the [Claude Code skill](#claude-code-skill) knows the
+style and checks its own slides.
 
 ## Contributing
 

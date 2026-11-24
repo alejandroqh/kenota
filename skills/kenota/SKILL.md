@@ -91,7 +91,10 @@ problems. Check each slide for:
   sense.
 
 The scripts find the engine with `scripts/engine.sh`: `$KENOTA`, then
-the repository this skill lives in (building it with cargo), then `PATH`.
+the kenota repository when this skill is a working copy in it (building it
+with cargo), then `kenota` on `PATH`, then the repository copy a plugin
+install brings along (building it with cargo). If none works, ask the user
+to run `cargo install kenota`.
 
 ## The Works look in brief
 

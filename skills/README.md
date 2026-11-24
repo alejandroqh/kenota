@@ -20,17 +20,26 @@ kenota/
     └── colormap.py             turn colored output into numbered grids
 ```
 
-Install it for every project by linking it into your personal skills folder:
+The repository is also a Claude Code plugin marketplace
+(`.claude-plugin/`), so the simplest install is one command, after
+`cargo install kenota`:
+
+```bash
+claude plugin install kenota --marketplace alejandroqh/kenota
+```
+
+Then ask Claude for a deck ("make a kenota deck about…"); the skill loads by
+itself. To work on the skill itself, link this folder into your personal
+skills folder instead, so edits take effect right away:
 
 ```bash
 ln -s "$PWD/skills/kenota" ~/.claude/skills/kenota
 ```
 
-Or, for this repository only, link it into `.claude/skills/` instead. Then ask
-Claude for a deck ("make a kenota deck about…"); the skill loads by
-itself. The scripts build the engine from this repository when the skill is
-here or linked from here, or use `$KENOTA` or a `kenota` on `PATH`;
-`preview.sh` needs `python3`.
+The scripts find the engine with `engine.sh`: `$KENOTA`, then this
+repository built with cargo (when the skill is here or linked from here),
+then `kenota` on `PATH`, then the repository copy that a plugin install
+brings along, built with cargo. `preview.sh` needs `python3`.
 
 The starter deck is checked by `tests/demo_deck.rs`, so engine changes that
 break it fail the tests.

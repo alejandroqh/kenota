@@ -1,0 +1,9 @@
+{
+  "name": "kenota",
+  "description": "A skill that writes, checks and previews kenota decks in the Works tutorial style",
+  "author": { "name": "alejandroqh" },
+  "homepage": "https://github.com/alejandroqh/kenota",
+  "repository": "https://github.com/alejandroqh/kenota",
+  "license": "Apache-2.0",
+  "keywords": ["presentation", "slides", "terminal", "dos", "ansi"]
+}

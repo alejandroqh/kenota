@@ -8,8 +8,9 @@ repository = "https://github.com/alejandroqh/kenota"
 readme = "README.md"
 keywords = ["presentation", "slides", "tui", "terminal", "ansi"]
 categories = ["command-line-utilities", "visualization"]
-# The README pictures are loaded from the repository.
-exclude = ["docs/"]
+# The README pictures are loaded from the repository; the Claude Code
+# plugin manifests only matter there.
+exclude = ["docs/", ".claude-plugin/"]
 
 [dependencies]
 clap = { version = "4.6.9", features = ["derive"] }
