@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+  <title>Welcome</title>
+  <style>
+    /* Rows: title 1-8 (big font, 7 rows + 1 blank), tagline 10, dialog 12-19 and its
+       shadow 20, two free rows above the footer.
+       Columns: KENOTA in the big font is 6 letters × 12 = 72, centered. */
+    h1 { --font: big; margin: 1 0 1 0; text-align: center; color: white; }
+    /* The title's shadow: a black copy 2 columns right and 1 row down,
+       like box-shadow: 2 1. The blank cells of the white title let it show. */
+    h1.front { position: relative; z-index: 1; }
+    h1.shadow { position: absolute; top: 2; left: 2; width: 80; margin: 0; color: black; font-weight: normal; }
+    .tagline { margin: 0 0 1 0; text-align: center; color: white; }
+    .tagline span { background: blue; padding: 0 1; }
+  </style>
+</head>
+<body class="field">
+  <h1 class="front">KENOTA</h1>
+  <h1 class="shadow">KENOTA</h1>
+  <p class="tagline"><span>Slides for the terminal, drawn like it's 1988</span></p>
+  <div class="dialog">
+    <p>A folder of HTML files becomes a</p>
+    <p>full-screen presentation in your terminal.</p>
+    <p>&nbsp;</p>
+    <p style="text-decoration: blink">Press <kbd>PgDn</kbd> to begin</p>
+  </div>
+</body>
+</html>

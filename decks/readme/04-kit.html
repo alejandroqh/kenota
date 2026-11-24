@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+  <title>The Whole Kit</title>
+  <meta name="transition" content="push">
+  <style>
+    /* Rows: band 0-3, two rows of cards 6-11 and 14-19 (6 rows each,
+       gap 2), shadow 20. Columns: 72 inside the padding = 4 cards of 15
+       and 3 gaps of 4, so the field shows 3 columns on both sides. */
+    .gallery { padding: 2 5 2 3; }
+    .card pre { width: 13; }
+    .card .big { margin: 0 auto; width: 13; height: 4; color: blue; text-align: left; }
+    .x { color: black; }
+    .g { color: green; }
+    .n { color: brown; }
+    .ok { color: green; }
+  </style>
+</head>
+<body class="field">
+  <div class="band">
+    <p>Frames, fills, pictures and big letters take a tag or a line of CSS.</p>
+    <p>PgDn reveals each step, slides wipe in, and kenota check finds mistakes.</p>
+  </div>
+  <div class="gallery">
+    <div class="grid">
+      <div class="card">
+<pre><span class=b> ╔═══════╗</span>
+<span class=b> ║</span> Hello <span class=b>║</span><span class=x>██</span>
+<span class=b> ╚═══════╝</span><span class=x>██</span>
+<span class=x>   █████████</span> </pre>
+        <p class="label">Frames</p>
+      </div>
+      <div class="card">
+<pre><span class=b>░░░▒▒▒▓▓▓████</span>
+<span class=b>░░░▒▒▒▓▓▓████</span>
+<span class=m>░░░▒▒▒▓▓▓████</span>
+<span class=m>░░░▒▒▒▓▓▓████</span></pre>
+        <p class="label">Fills</p>
+      </div>
+      <div class="card">
+<pre><span class=r>    ▄█▄</span>    <span class=y>▄▄</span>
+<span class=r>   ▄███▄</span>   <span class=y>▀▀</span>
+<span class=n>   █</span><span class=x>█</span><span class=n>█</span><span class=x>█</span><span class=n>█</span>
+<span class=g>▀▀▀▀▀▀▀▀▀▀▀▀▀</span></pre>
+        <p class="label">Pictures</p>
+      </div>
+      <div class="card">
+        <p class="big" data-font="small">ABC</p>
+        <p class="label">Big text</p>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card">
+<pre><span class=b>•</span> <span class=x>─────────</span>
+<span class=b>•</span> <span class=x>───────</span>
+<span class=k>•  ·  ·  ·</span>
+<span class=b>      PgDn ►</span> </pre>
+        <p class="label">Builds</p>
+      </div>
+      <div class="card">
+<pre><span class=b>███████</span><span class=m>▒▒▒▒▒▒</span>
+<span class=b>███████</span><span class=m>▒▒▒▒▒▒</span>
+<span class=b>███████</span><span class=m>▒▒▒▒▒▒</span>
+<span class=b>██████►</span><span class=m>▒▒▒▒▒▒</span></pre>
+        <p class="label">Transitions</p>
+      </div>
+      <div class="card">
+<pre>             
+<span class=x>Hello, wor</span><span class=b>█</span>
+
+             </pre>
+        <p class="label">Typewriter</p>
+      </div>
+      <div class="card">
+<pre><span class=x>kenota check</span>
+
+<span class=ok>√ 4 slides</span>
+<span class=ok>√ no problems</span></pre>
+        <p class="label">Check</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

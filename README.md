@@ -4,9 +4,10 @@ kenota turns a folder of HTML files into a full-screen presentation in your
 terminal, drawn like the 1988 Microsoft Works DOS tutorials: 16 EGA colors,
 box drawing, ░▒▓ fills and drop shadows, with charts, build steps and transitions.
 
-![What is kenota](docs/readme-1.png)
-![The building blocks](docs/readme-2.png)
-![Motion and tools](docs/readme-3.png)
+![KENOTA](docs/readme-1.png)
+![Your talk](docs/readme-2.png)
+![Slides in HTML](docs/readme-3.png)
+![The whole kit](docs/readme-4.png)
 
 <sub>Drawn by kenota itself: `kenota render decks/readme --slide 1 --png docs/readme-1.png --scale 2`</sub>
 

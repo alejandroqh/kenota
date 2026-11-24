@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+  <title>Slides in HTML</title>
+  <style>
+    /* Rows: band 0-3, work 6-18 (13 rows) and its shadow 19, three free rows.
+       Columns: 72 inside the padding = editor 30 + gap 10 + chart 32.
+       The gap holds the editor's shadow (2), then the arrow (6) with a
+       column of field on each side. */
+    .work { display: flex; gap: 10; padding: 2 5 2 3; }
+
+    /* An editor window: a grey frame with the file name, the source inside
+       as typed, tags in lightcyan and content in white. */
+    .editor { width: 30; padding: 0 1 1 1; }
+    .editor .name { text-align: center; }
+    .editor pre { height: 11; padding: 1 1; color: white; }
+    .editor .t { color: lightcyan; }
+
+    /* The arrow and the result appear together on PgDn. */
+    .arrow { position: absolute; left: 36; top: 11; width: 6; background: black; color: white; }
+    .arrow b { color: yellow; font-weight: normal; }
+
+    /* Chart panel: inner width 28 = value labels 2 + axis 2 + 4 bars × 6.
+       height is the whole chart: caption 1 + plot 6 + axis 1 + labels 1
+       + legend 2. Series colors come from here, so the source stays short. */
+    .chart { width: 32; }
+    .chart table { height: 11; margin: 0; }
+    .chart caption { color: blue; }
+    /* th is bold, and bold black is darkgray: keep the legend black. */
+    .chart th { font-weight: normal; }
+    .chart th + th { background: blue; }
+    .chart th + th + th { background: magenta; }
+  </style>
+</head>
+<body class="field">
+  <div class="band">
+    <p>Each slide is a plain HTML file, styled with a little CSS.</p>
+    <p>Mark a table with data-chart, and kenota draws it as a chart.</p>
+  </div>
+  <div class="work">
+    <div class="panel editor">
+      <p class="name">01-sales.html</p>
+<pre class="screen"><span class="t">&lt;table data-chart="bar"&gt;</span>
+<span class="t">&lt;caption&gt;</span>Units sold
+<span class="t">&lt;tr&gt;&lt;th&gt;&lt;th&gt;</span>North<span class="t">&lt;th&gt;</span>South
+<span class="t">&lt;tr&gt;&lt;td&gt;</span>Q1<span class="t">&lt;td&gt;</span>12<span class="t">&lt;td&gt;</span>8
+<span class="t">&lt;tr&gt;&lt;td&gt;</span>Q2<span class="t">&lt;td&gt;</span>18<span class="t">&lt;td&gt;</span>11
+<span class="t">&lt;tr&gt;&lt;td&gt;</span>Q3<span class="t">&lt;td&gt;</span>25<span class="t">&lt;td&gt;</span>14
+<span class="t">&lt;tr&gt;&lt;td&gt;</span>Q4<span class="t">&lt;td&gt;</span>31<span class="t">&lt;td&gt;</span>20
+<span class="t">&lt;/table&gt;</span></pre>
+    </div>
+    <div class="panel chart" data-step="1">
+      <table data-chart="bar">
+        <caption>Units sold</caption>
+        <tr><th></th><th>North</th><th>South</th></tr>
+        <tr><td>Q1</td><td>12</td><td>8</td></tr>
+        <tr><td>Q2</td><td>18</td><td>11</td></tr>
+        <tr><td>Q3</td><td>25</td><td>14</td></tr>
+        <tr><td>Q4</td><td>31</td><td>20</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="arrow" data-step="1">kenota<br><b>─────►</b></div>
+</body>
+</html>
