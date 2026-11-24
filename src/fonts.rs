@@ -11,7 +11,7 @@ use color_eyre::eyre::{Result, WrapErr, eyre};
 
 use crate::figlet::Font;
 
-/// The bundled fonts, drawn for dos-kenota with block characters.
+/// The bundled fonts, drawn for kenota with block characters.
 const BUNDLED: [(&str, &str); 3] = [
     ("block", include_str!("fonts/block.flf")),
     ("small", include_str!("fonts/small.flf")),

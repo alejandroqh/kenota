@@ -1,10 +1,10 @@
-//! The bundled decks must pass `dos-kenota check`: the demo deck and the
+//! The bundled decks must pass `kenota check`: the demo deck and the
 //! starter deck that ships with the Claude Code skill.
 
 use std::path::Path;
 
-use dos_kenota::check::check;
-use dos_kenota::deck::Deck;
+use kenota::check::check;
+use kenota::deck::Deck;
 
 fn assert_no_problems(folder: &str) {
     let deck = Deck::load(&Path::new(env!("CARGO_MANIFEST_DIR")).join(folder)).unwrap();
@@ -19,5 +19,5 @@ fn demo_deck_has_no_problems() {
 
 #[test]
 fn skill_starter_deck_has_no_problems() {
-    assert_no_problems("skills/dos-kenota/assets/starter-deck");
+    assert_no_problems("skills/kenota/assets/starter-deck");
 }

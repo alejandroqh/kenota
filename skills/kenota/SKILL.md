@@ -1,11 +1,11 @@
 ---
-name: dos-kenota
-description: Create, edit and check dos-kenota presentations — DOS text-mode slide decks in the look of the 1988 Microsoft Works tutorials (EGA 16 colors, ░▒▓ dithered fields, box-drawing frames, black drop shadows, a PgUp/PgDn footer), written as one HTML file per slide in a deck folder. Use this whenever the user wants slides, a deck, a talk, a lesson or a demo made with dos-kenota, asks for a retro, DOS, ANSI, BBS, EGA or terminal-style presentation, or works in a folder holding a deck.toml or numbered .html slides, even if they never say "dos-kenota". It covers the Works visual style, every supported component, layout balance on the 80×25 grid, builds, transitions and text effects, and a script to see each slide as text.
+name: kenota
+description: Create, edit and check kenota presentations — DOS text-mode slide decks in the look of the 1988 Microsoft Works tutorials (EGA 16 colors, ░▒▓ dithered fields, box-drawing frames, black drop shadows, a PgUp/PgDn footer), written as one HTML file per slide in a deck folder. Use this whenever the user wants slides, a deck, a talk, a lesson or a demo made with kenota, asks for a retro, DOS, ANSI, BBS, EGA or terminal-style presentation, or works in a folder holding a deck.toml or numbered .html slides, even if they never say "kenota". It covers the Works visual style, every supported component, layout balance on the 80×25 grid, builds, transitions and text effects, and a script to see each slide as text.
 ---
 
-# dos-kenota decks
+# kenota decks
 
-dos-kenota plays a folder of HTML files as a full-screen DOS presentation in
+kenota plays a folder of HTML files as a full-screen DOS presentation in
 the terminal. Each slide is drawn on a fixed grid of character cells (80×25 by
 default) with the 16 EGA colors. Nothing is in pixels: every size, gap and
 position is a number of cells, so a slide is closer to a drawing on graph
@@ -42,15 +42,15 @@ describes it in detail.
      (next section). `check` can't see a line that wrapped where you didn't
      want it, or lopsided margins, so never hand over a deck you haven't
      looked at.
-6. **Hand over** with the command to run it: `dos-kenota <deck>` (or
-   `cargo run -- <deck>` inside the dos-kenota repository). Keys: PgDn/→/Space
+6. **Hand over** with the command to run it: `kenota <deck>` (or
+   `cargo run -- <deck>` inside the kenota repository). Keys: PgDn/→/Space
    next step or slide, PgUp/← back, Home/End, q quits. `--slide N` starts at
    slide N.
 
 ## Seeing a slide
 
 You can't watch the interactive viewer, so `scripts/preview.sh` prints a
-slide through `dos-kenota render`:
+slide through `kenota render`:
 
 ```bash
 scripts/preview.sh <deck> 3                 # slide 3, all steps showing, as a numbered text grid
@@ -72,9 +72,9 @@ scripts/preview.sh <deck> 3 --step 2 --time 0.5     # half a second after step 2
     blinking text on, marquees at the start, the first frame;
   - so the same command always gives the same picture.
 
-The engine also runs directly: `dos-kenota render <deck> [--slide N]
+The engine also runs directly: `kenota render <deck> [--slide N]
 [--step N] [--time S] [--colors none|truecolor|ansi16]` prints slides (every
-slide when `--slide` is left out), and `dos-kenota check <deck>` lists
+slide when `--slide` is left out), and `kenota check <deck>` lists
 problems. Check each slide for:
 
 - text that wrapped where you didn't want it (a box narrower than you thought);
@@ -85,7 +85,7 @@ problems. Check each slide for:
 - typewriters part-way (`--time`), to see that the order of appearance makes
   sense.
 
-The scripts find the engine with `scripts/engine.sh`: `$DOS_KENOTA`, then
+The scripts find the engine with `scripts/engine.sh`: `$KENOTA`, then
 the repository this skill lives in (building it with cargo), then `PATH`.
 
 ## The Works look in brief

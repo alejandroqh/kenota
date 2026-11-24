@@ -1,4 +1,4 @@
-//! dos-kenota: a DOS-style, text-only presentation engine.
+//! kenota: a DOS-style, text-only presentation engine.
 //!
 //! A deck is a folder of HTML slides. Each slide is styled with a CSS
 //! subset, laid out in character cells, and painted onto a fixed text

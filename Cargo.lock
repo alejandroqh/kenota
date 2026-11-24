@@ -519,23 +519,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dos-kenota"
-version = "0.1.0"
-dependencies = [
- "clap",
- "color-eyre",
- "image",
- "insta",
- "ratatui",
- "scraper",
- "serde",
- "simplecss",
- "tempfile",
- "toml",
- "unicode-width",
-]
-
-[[package]]
 name = "dtoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -909,6 +892,23 @@ dependencies = [
  "hashbrown",
  "portable-atomic",
  "thiserror 2.0.21",
+]
+
+[[package]]
+name = "kenota"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "color-eyre",
+ "image",
+ "insta",
+ "ratatui",
+ "scraper",
+ "serde",
+ "simplecss",
+ "tempfile",
+ "toml",
+ "unicode-width",
 ]
 
 [[package]]

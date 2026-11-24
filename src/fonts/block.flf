@@ -1,6 +1,6 @@
 flf2a$ 4 4 8 -1 2 0 0 0
 block: 5x8 pixel letters drawn with half blocks, 4 rows tall.
-Made for dos-kenota. Full-width layout: each glyph ends in one blank column.
+Made for kenota. Full-width layout: each glyph ends in one blank column.
     @
     @
     @

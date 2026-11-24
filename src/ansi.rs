@@ -1,4 +1,4 @@
-//! Turning a canvas into text for a terminal or a file: `dos-kenota render`.
+//! Turning a canvas into text for a terminal or a file: `kenota render`.
 
 use std::fmt::Write;
 

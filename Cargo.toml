@@ -1,5 +1,5 @@
 [package]
-name = "dos-kenota"
+name = "kenota"
 version = "0.1.0"
 edition = "2024"
 license = "Apache-2.0"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shows a dos-kenota slide as text you can read: by default a grid of the
+# Shows a kenota slide as text you can read: by default a grid of the
 # characters with row and column numbers that match CSS `top`/`left`.
 #
 #   preview.sh <deck> [slide] [--step N] [--time SECONDS]
@@ -13,7 +13,7 @@
 #               (colors are EGA numbers in hex: 1 blue, 7 lightgray, f white)
 #   --grid G    the grids to print, comma-separated: text, bg, fg
 #   --rows R    only canvas rows R (`5-12` or `7`)
-#   --color     the raw output of `dos-kenota render`, with color codes
+#   --color     the raw output of `kenota render`, with color codes
 #   --plain     plain text without numbers or colors
 #
 # The engine is found by engine.sh next to this script.

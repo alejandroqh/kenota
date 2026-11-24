@@ -8,18 +8,18 @@ use std::time::{Duration, Instant};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use color_eyre::Result;
 use color_eyre::eyre::bail;
-use dos_kenota::anim::Clock;
-use dos_kenota::ansi::{self, ColorMode};
-use dos_kenota::app::App;
-use dos_kenota::check;
-use dos_kenota::deck::Deck;
-use dos_kenota::render;
+use kenota::anim::Clock;
+use kenota::ansi::{self, ColorMode};
+use kenota::app::App;
+use kenota::check;
+use kenota::deck::Deck;
+use kenota::render;
 use ratatui::DefaultTerminal;
 use ratatui::crossterm::event::{self, Event};
 
 /// A DOS-style text presentation engine.
 ///
-/// `dos-kenota <deck>` presents a deck full screen; `render` and `check`
+/// `kenota <deck>` presents a deck full screen; `render` and `check`
 /// work without the interactive viewer.
 #[derive(Parser)]
 #[command(
@@ -165,7 +165,7 @@ fn present(folder: &Path, slide: usize, colors: Colors) -> Result<()> {
     result
 }
 
-/// `dos-kenota render`: prints slides as text, with or without colors.
+/// `kenota render`: prints slides as text, with or without colors.
 fn render_slides(args: &RenderArgs) -> Result<()> {
     let deck = Deck::load(&args.deck)?;
     let count = deck.slides.len();
@@ -213,7 +213,7 @@ fn render_slides(args: &RenderArgs) -> Result<()> {
     }
 }
 
-/// `dos-kenota check`: lists every problem; fails when there is one.
+/// `kenota check`: lists every problem; fails when there is one.
 fn check_deck(folder: &Path) -> Result<ExitCode> {
     let deck = Deck::load(folder)?;
     let problems = check::check(&deck);

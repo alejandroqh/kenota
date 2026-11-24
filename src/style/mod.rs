@@ -1,4 +1,4 @@
-//! Styles: the CSS subset dos-kenota understands, resolved for every element.
+//! Styles: the CSS subset kenota understands, resolved for every element.
 //!
 //! Plain numbers are character cells: `margin: 1 2` is one row above and
 //! below, two columns left and right.
@@ -428,7 +428,7 @@ impl ComputedStyle {
                     .find_map(values::list_style_type)
                     .ok_or(invalid)?;
             }
-            // Custom properties are reserved for dos-kenota extensions and deck variables.
+            // Custom properties are reserved for kenota extensions and deck variables.
             custom if custom.starts_with("--") => {}
             _ => return Err(Rejected::UnknownProperty),
         }

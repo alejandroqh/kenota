@@ -1,4 +1,4 @@
-# dos-kenota — TODO
+# kenota — TODO
 
 A text-only presentation engine in the style of the MS Works DOS tutorials:
 EGA 16 colors, box drawing, ░▒▓ fills, drop shadows, and a footer bar
@@ -99,7 +99,7 @@ Crates: `ratatui`, `scraper`, `simplecss`, `image` (png+gif), `toml` + `serde`, 
 ## Milestones
 
 ### 1. Shell ✅
-- [x] Library + binary split, `clap` command line: `dos-kenota <deck> [--slide N] [--colors auto|truecolor|ansi16]`
+- [x] Library + binary split, `clap` command line: `kenota <deck> [--slide N] [--colors auto|truecolor|ansi16]`
 - [x] Load a deck folder: optional `deck.toml`, `.html` slides in natural filename order
 - [x] Slide title from `<title>`, falling back to the file name
 - [x] Plain-text extraction of the slide body (temporary until milestone 2)
@@ -162,7 +162,7 @@ Notes:
 Notes:
 - `src/figlet.rs` reads `flf2a` fonts (code-tagged characters too) and lays them out like
   `figlet`: full width, kerning, or smushing with the six rules; hardblanks draw as spaces.
-- Bundled fonts, drawn for dos-kenota (`src/fonts/*.flf`): `block` (5×8 pixels in half
+- Bundled fonts, drawn for kenota (`src/fonts/*.flf`): `block` (5×8 pixels in half
   blocks, 4 rows, the `<h1>` default), `small` (3×5 capitals, 3 rows), `big` (full blocks,
   8 rows). A deck adds fonts with `.flf` files in its folder or `fonts/`, named by file.
 - `--font: <name> | none` is inherited; `data-font="name"` on an element works like an inline
@@ -237,11 +237,11 @@ Notes:
 - [x] `render <deck> --slide N`: print a slide as ANSI to stdout
 - [ ] Jump to slide by typing its number + Enter
 - [ ] Example deck recreating both MS Works screenshots
-- [x] Claude Code skill (`skills/dos-kenota`): Works style guide, every component, layout
+- [x] Claude Code skill (`skills/kenota`): Works style guide, every component, layout
       balance, animation advice, a starter deck, and scripts around `render` and `check`
 
 Notes:
-- Command line: `dos-kenota <deck>` presents; `render` and `check` are subcommands (clap
+- Command line: `kenota <deck>` presents; `render` and `check` are subcommands (clap
   `args_conflicts_with_subcommands`, so a deck folder named `render` needs `./render`).
 - `render <deck> [--slide N] [--step N] [--time S] [--colors auto|truecolor|ansi16|none]`
   (`src/ansi.rs`): the canvas footer included, one line per row, each colored line ending in

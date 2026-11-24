@@ -2,7 +2,7 @@
 
 The Microsoft Works for DOS (1988) tutorials taught software with full-screen
 EGA pictures: a scenario, a bit of narration, and one clear visual per
-screen, paged with PgUp/PgDn. dos-kenota exists to make slides that feel like
+screen, paged with PgUp/PgDn. kenota exists to make slides that feel like
 those screens. This file breaks the look down so you can reproduce it on
 purpose instead of by accident.
 

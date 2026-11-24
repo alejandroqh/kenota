@@ -5,7 +5,7 @@ use std::path::Path;
 use std::process::{Command, Output};
 
 fn run(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_dos-kenota"))
+    Command::new(env!("CARGO_BIN_EXE_kenota"))
         .args(args)
         .current_dir(env!("CARGO_MANIFEST_DIR"))
         .output()

@@ -1,12 +1,12 @@
 # Claude Code skill
 
-`dos-kenota/` is a Claude Code skill that teaches Claude to write dos-kenota
+`kenota/` is a Claude Code skill that teaches Claude to write kenota
 decks in the MS Works tutorial style: the look, every supported component,
-layout on the 80×25 grid, and animation. Its scripts wrap `dos-kenota check` and
-`dos-kenota render`, so Claude can check its own work and see each slide as text.
+layout on the 80×25 grid, and animation. Its scripts wrap `kenota check` and
+`kenota render`, so Claude can check its own work and see each slide as text.
 
 ```
-dos-kenota/
+kenota/
 ├── SKILL.md                    workflow, style summary, layout rules, gotchas
 ├── references/
 │   ├── works-style.md          the Works look: palette, compositions, narration, block pictures
@@ -23,13 +23,13 @@ dos-kenota/
 Install it for every project by linking it into your personal skills folder:
 
 ```bash
-ln -s "$PWD/skills/dos-kenota" ~/.claude/skills/dos-kenota
+ln -s "$PWD/skills/kenota" ~/.claude/skills/kenota
 ```
 
 Or, for this repository only, link it into `.claude/skills/` instead. Then ask
-Claude for a deck ("make a dos-kenota deck about…"); the skill loads by
+Claude for a deck ("make a kenota deck about…"); the skill loads by
 itself. The scripts build the engine from this repository when run from here,
-or use `$DOS_KENOTA` or a `dos-kenota` on `PATH`; `preview.sh` needs `python3`.
+or use `$KENOTA` or a `kenota` on `PATH`; `preview.sh` needs `python3`.
 
 The starter deck is checked by `tests/demo_deck.rs`, so engine changes that
 break it fail the tests.

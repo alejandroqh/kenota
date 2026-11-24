@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reads a colored dos-kenota slide on stdin (`dos-kenota render --colors
+"""Reads a colored kenota slide on stdin (`kenota render --colors
 truecolor`, or a terminal capture such as `tmux capture-pane -e`) and prints
 grids with row and column numbers: the text, the background color of every
 cell, and the foreground color of every cell.
@@ -142,7 +142,7 @@ GRIDS = {
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Color grids of a dos-kenota capture.")
+    parser = argparse.ArgumentParser(description="Color grids of a kenota capture.")
     parser.add_argument("--grid", default="text,bg,fg",
                         help="comma-separated: text, bg, fg (default: all)")
     parser.add_argument("--rows", type=row_range, default=(0, 999),

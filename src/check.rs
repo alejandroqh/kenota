@@ -1,4 +1,4 @@
-//! Finding problems in a deck without showing it: `dos-kenota check`.
+//! Finding problems in a deck without showing it: `kenota check`.
 //!
 //! A problem is either a warning collected while reading a slide (CSS that
 //! was ignored, an unknown font, a missing picture, an unsupported tag, a

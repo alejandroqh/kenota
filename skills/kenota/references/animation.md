@@ -1,4 +1,4 @@
-# Motion in dos-kenota
+# Motion in kenota
 
 Four kinds of motion: builds (PgDn reveals the next part), transitions
 (how one slide replaces the next), text effects (typewriter, marquee,
