@@ -2,14 +2,19 @@
 
 use scraper::{Html, Selector};
 
+use crate::anim::{self, Timeline};
 use crate::style::{self, StyledNode};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParsedSlide {
     /// Contents of `<title>`, whitespace collapsed. `None` when missing or blank.
     pub title: Option<String>,
-    /// The `<html>` element, styled.
+    /// The `<html>` element, styled, with build steps and animations set.
     pub root: StyledNode,
+    /// The slide's build steps and animations.
+    pub timeline: Timeline,
+    /// `<meta name="transition" content="…">`, unparsed.
+    pub transition: Option<String>,
     /// CSS problems found while styling: unknown properties, bad values, …
     pub warnings: Vec<String>,
 }
@@ -31,11 +36,22 @@ pub fn parse(source: &str, deck_css: Option<&str>) -> ParsedSlide {
         })
         .filter(|t| !t.is_empty());
 
+    let meta_selector =
+        Selector::parse("meta[name=transition i]").expect("static selector is valid");
+    let transition = doc
+        .select(&meta_selector)
+        .next()
+        .and_then(|meta| meta.value().attr("content"))
+        .map(|content| content.trim().to_string());
+
     let mut warnings = Vec::new();
-    let root = style::build(&doc, deck_css, &mut warnings);
+    let mut root = style::build(&doc, deck_css, &mut warnings);
+    let timeline = anim::prepare(&mut root, &mut warnings);
     ParsedSlide {
         title,
         root,
+        timeline,
+        transition,
         warnings,
     }
 }
@@ -50,6 +66,16 @@ mod tests {
         assert_eq!(with.title.as_deref(), Some("Spreadsheet Charting"));
         assert_eq!(parse("<p>x</p>", None).title, None);
         assert_eq!(parse("<title>  </title>", None).title, None);
+    }
+
+    #[test]
+    fn transition_comes_from_meta() {
+        let slide = parse(
+            "<head><meta name='Transition' content=' wipe-left 1s '></head><p>x</p>",
+            None,
+        );
+        assert_eq!(slide.transition.as_deref(), Some("wipe-left 1s"));
+        assert_eq!(parse("<p>x</p>", None).transition, None);
     }
 
     #[test]

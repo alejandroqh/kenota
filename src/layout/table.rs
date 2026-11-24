@@ -12,7 +12,7 @@ use ratatui::style::Style;
 
 use super::border::{horizontal, junction, vertical};
 use super::measure::{self, Intrinsic};
-use super::{Area, Ctx, Item, block, distribute, layout_box};
+use super::{Area, Ctx, Item, Layer, Tag, block, distribute, layout_box};
 use crate::assets::Assets;
 use crate::style::{BorderStyle, StyledNode};
 
@@ -240,7 +240,7 @@ pub(super) fn layout<'a>(
         .color
         .unwrap_or_else(|| table.style.text_color());
     let line_style = Style::new().fg(color.color());
-    let rule = |y: i32, style: BorderStyle, edge: Edge, out: &mut Vec<Item>| {
+    let rule = |y: i32, style: BorderStyle, edge: Edge, out: &mut Layer| {
         out.push(Item::Text {
             x: left,
             y,
@@ -250,17 +250,12 @@ pub(super) fn layout<'a>(
     };
 
     if frame > 0 {
-        rule(cursor, grid.frame, Edge::Top, &mut ctx.layer.items);
+        rule(cursor, grid.frame, Edge::Top, &mut ctx.layer);
         cursor += 1;
     }
     for (i, row) in grid.rows.iter().enumerate() {
         if i > 0 && grid.line_between(i - 1, i) {
-            rule(
-                cursor,
-                BorderStyle::Single,
-                Edge::Middle,
-                &mut ctx.layer.items,
-            );
+            rule(cursor, BorderStyle::Single, Edge::Middle, &mut ctx.layer);
             cursor += 1;
         }
         let height = row
@@ -278,14 +273,16 @@ pub(super) fn layout<'a>(
                 width: right - left - 2 * frame,
                 height,
             };
-            ctx.layer.items.push(area.fill(background));
+            // Shows with its row, which may be a build step.
+            ctx.layer
+                .push_tagged(area.fill(background), Tag::of(&row.node.style));
         }
         for ((cell, &start), &width) in row.cells.iter().zip(&starts).zip(&widths) {
             layout_box(cell, start, cursor, width, Some(height), None, ctx);
         }
         for row_y in cursor..cursor + height {
             for &(line_x, style) in &lines {
-                ctx.layer.items.push(Item::Text {
+                ctx.layer.push(Item::Text {
                     x: line_x,
                     y: row_y,
                     text: vertical(style).into(),
@@ -296,7 +293,7 @@ pub(super) fn layout<'a>(
         cursor += height;
     }
     if frame > 0 {
-        rule(cursor, grid.frame, Edge::Bottom, &mut ctx.layer.items);
+        rule(cursor, grid.frame, Edge::Bottom, &mut ctx.layer);
         cursor += 1;
     }
     cursor - y

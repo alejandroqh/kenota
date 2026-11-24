@@ -6,21 +6,28 @@ use ratatui::style::Style;
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use super::measure::Intrinsic;
-use super::{Item, bigtext, is_absolute, text_style};
+use super::{Item, Layer, Tag, bigtext, is_absolute, text_style};
 use crate::assets::Assets;
 use crate::palette::Ega;
 use crate::style::{ComputedStyle, Content, StyledNode, TextAlign, TextTransform};
 
+/// How a piece of text is drawn, and when it shows.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct Pen {
+    pub style: Style,
+    pub tag: Tag,
+}
+
 /// A piece of inline content.
 #[derive(Debug, PartialEq)]
 pub(super) enum Atom {
-    Word(String, Style),
+    Word(String, Pen),
     /// A space; `true` when preserved (`white-space: pre…`).
-    Space(Style, bool),
+    Space(Pen, bool),
     Break,
 }
 
-type Line = Vec<(String, Style)>;
+type Line = Vec<(String, Pen)>;
 
 /// Lays out `run` (consecutive inline siblings) as lines starting at row
 /// `y`. Returns how many rows it took (whitespace-only runs take none),
@@ -34,7 +41,7 @@ pub(super) fn layout<'a>(
     x: i32,
     y: i32,
     width: i32,
-    out: &mut Vec<Item>,
+    out: &mut Layer,
 ) -> (i32, Vec<&'a StyledNode>) {
     let (atoms, absolute) = atoms(run);
     if let Some(font) = bigtext::font(container, &assets.fonts) {
@@ -110,7 +117,10 @@ fn collect<'a>(
     }
     match &node.content {
         Content::Text(text) => {
-            let style = text_style(&node.style, background);
+            let style = Pen {
+                style: text_style(&node.style, background),
+                tag: Tag::of(&node.style),
+            };
             let text = match node.style.text_transform {
                 TextTransform::None => text.clone(),
                 TextTransform::Uppercase => text.to_uppercase(),
@@ -140,7 +150,7 @@ pub(super) fn is_html_space(c: char) -> bool {
     matches!(c, ' ' | '\t' | '\n' | '\r' | '\x0c')
 }
 
-fn collapsed_atoms(text: &str, style: Style, atoms: &mut Vec<Atom>) {
+fn collapsed_atoms(text: &str, style: Pen, atoms: &mut Vec<Atom>) {
     let mut word = String::new();
     for c in text.chars() {
         if is_html_space(c) {
@@ -159,7 +169,7 @@ fn collapsed_atoms(text: &str, style: Style, atoms: &mut Vec<Atom>) {
     }
 }
 
-fn preserved_atoms(text: &str, style: Style, atoms: &mut Vec<Atom>) {
+fn preserved_atoms(text: &str, style: Pen, atoms: &mut Vec<Atom>) {
     const TAB_STOP: usize = 8;
     let mut word = String::new();
     let mut column = 0;
@@ -222,13 +232,13 @@ struct LineBreaker {
     current: Line,
     current_width: usize,
     /// A collapsible space waiting for the next word on the same line.
-    pending_space: Option<Style>,
+    pending_space: Option<Pen>,
     width: usize,
     wrap: bool,
 }
 
 impl LineBreaker {
-    fn push(&mut self, text: &str, style: Style) {
+    fn push(&mut self, text: &str, style: Pen) {
         match self.current.last_mut() {
             Some((last, last_style)) if *last_style == style => last.push_str(text),
             _ => self.current.push((text.to_string(), style)),
@@ -236,7 +246,7 @@ impl LineBreaker {
         self.current_width += text.width();
     }
 
-    fn word(&mut self, word: &str, style: Style) {
+    fn word(&mut self, word: &str, style: Pen) {
         let width = word.width();
         let space = self.pending_space.take().filter(|_| self.current_width > 0);
         let space_width = usize::from(space.is_some());
@@ -263,13 +273,13 @@ impl LineBreaker {
         }
     }
 
-    fn space(&mut self, style: Style) {
+    fn space(&mut self, style: Pen) {
         if self.current_width > 0 && self.pending_space.is_none() {
             self.pending_space = Some(style);
         }
     }
 
-    fn preserved_space(&mut self, style: Style) {
+    fn preserved_space(&mut self, style: Pen) {
         if let Some(space_style) = self.pending_space.take() {
             self.push(" ", space_style);
         }
@@ -294,7 +304,7 @@ impl LineBreaker {
     }
 }
 
-fn emit(line: &Line, x: i32, y: i32, width: i32, align: TextAlign, out: &mut Vec<Item>) {
+fn emit(line: &Line, x: i32, y: i32, width: i32, align: TextAlign, out: &mut Layer) {
     let line_width: i32 = line
         .iter()
         .map(|(text, _)| i32::try_from(text.width()).unwrap_or(i32::MAX))
@@ -306,13 +316,16 @@ fn emit(line: &Line, x: i32, y: i32, width: i32, align: TextAlign, out: &mut Vec
     }
     .max(0);
     let mut cursor = x + offset;
-    for (text, style) in line {
-        out.push(Item::Text {
-            x: cursor,
-            y,
-            text: text.replace('\u{a0}', " "),
-            style: *style,
-        });
+    for (text, pen) in line {
+        out.push_tagged(
+            Item::Text {
+                x: cursor,
+                y,
+                text: text.replace('\u{a0}', " "),
+                style: pen.style,
+            },
+            pen.tag,
+        );
         cursor += i32::try_from(text.width()).unwrap_or(i32::MAX);
     }
 }

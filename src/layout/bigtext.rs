@@ -7,11 +7,9 @@
 //! in the emphasis color. Blank cells are left alone, so a pattern or
 //! background behind big text shows between the letters.
 
-use ratatui::style::Style;
-
-use super::Item;
-use super::inline::Atom;
+use super::inline::{Atom, Pen};
 use super::measure::Intrinsic;
+use super::{Item, Layer, Tag};
 use crate::figlet::{Art, Font};
 use crate::fonts::Fonts;
 use crate::style::{ComputedStyle, TextAlign};
@@ -30,7 +28,7 @@ pub(super) fn layout(
     x: i32,
     y: i32,
     width: i32,
-    out: &mut Vec<Item>,
+    out: &mut Layer,
 ) -> i32 {
     let text = characters(atoms);
     if text.is_empty() {
@@ -74,9 +72,9 @@ fn cells(n: usize) -> i32 {
 
 /// The text as styled characters: runs of whitespace become one space,
 /// none at line ends, and `<br>` becomes `'\n'`.
-fn characters(atoms: &[Atom]) -> Vec<(char, Style)> {
-    let mut out: Vec<(char, Style)> = Vec::new();
-    let trim_space = |out: &mut Vec<(char, Style)>| {
+fn characters(atoms: &[Atom]) -> Vec<(char, Pen)> {
+    let mut out: Vec<(char, Pen)> = Vec::new();
+    let trim_space = |out: &mut Vec<(char, Pen)>| {
         if matches!(out.last(), Some((' ', _))) {
             out.pop();
         }
@@ -91,7 +89,11 @@ fn characters(atoms: &[Atom]) -> Vec<(char, Style)> {
             }
             Atom::Break => {
                 trim_space(&mut out);
-                out.push(('\n', Style::new()));
+                let pen = Pen {
+                    style: ratatui::style::Style::new(),
+                    tag: Tag::default(),
+                };
+                out.push(('\n', pen));
             }
         }
     }
@@ -100,7 +102,7 @@ fn characters(atoms: &[Atom]) -> Vec<(char, Style)> {
 }
 
 /// One text item per run of drawn cells with the same style.
-fn emit(art: &Art<Style>, x: i32, y: i32, out: &mut Vec<Item>) {
+fn emit(art: &Art<Pen>, x: i32, y: i32, out: &mut Layer) {
     for (row_y, row) in (y..).zip(&art.rows) {
         let mut column = 0;
         while column < row.len() {
@@ -117,12 +119,15 @@ fn emit(art: &Art<Style>, x: i32, y: i32, out: &mut Vec<Item>) {
                 text.push(*c);
                 column += 1;
             }
-            out.push(Item::Text {
-                x: x + cells(start),
-                y: row_y,
-                text,
-                style,
-            });
+            out.push_tagged(
+                Item::Text {
+                    x: x + cells(start),
+                    y: row_y,
+                    text,
+                    style: style.style,
+                },
+                style.tag,
+            );
         }
     }
 }

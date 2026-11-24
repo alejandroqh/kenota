@@ -10,7 +10,7 @@
 //! there is no wrapping onto a second row.
 
 use super::measure::{self, Intrinsic};
-use super::{Ctx, Pending, distribute, inline, is_absolute, layout_box};
+use super::{Ctx, Layer, Pending, distribute, inline, is_absolute, layout_box};
 use crate::assets::Assets;
 use crate::style::{Align, Content, Justify, StyledNode};
 
@@ -70,7 +70,7 @@ pub(super) fn layout<'a>(
                 item_x,
                 y + offset,
                 widths[i],
-                &mut ctx.layer.items,
+                &mut ctx.layer,
             );
         } else if style.align_items == Align::Stretch && item.style.height.is_none() {
             let stretch = row - margin.top - margin.bottom;
@@ -262,7 +262,16 @@ fn spacing(justify: Justify, free: i32, n: usize) -> Vec<i32> {
 /// Height of an item including its vertical margins.
 fn outer_height(item: &StyledNode, width: i32, assets: &Assets) -> i32 {
     if item.tag().is_none() {
-        return inline::layout(&[item], &item.style, assets, 0, 0, width, &mut Vec::new()).0;
+        return inline::layout(
+            &[item],
+            &item.style,
+            assets,
+            0,
+            0,
+            width,
+            &mut Layer::default(),
+        )
+        .0;
     }
     let margin = item.style.margin;
     measure::height(item, width, assets) + margin.top + margin.bottom

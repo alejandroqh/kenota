@@ -10,7 +10,7 @@ reading `◄◄◄ PgUp • n/N • PgDn ►►►`.
 - Fixed 80×25 canvas, centered in the terminal with a border when there is room.
   A deck can choose 80×43 or 80×50 instead.
 - Layout: normal flow by default, plus `position:absolute` in character cells (overlap allowed).
-- Animations: slide transitions, step-by-step builds, text effects, frame animation.
+- Animations: slide transitions, step-by-step builds, text effects, frame animation (milestone 6).
 - Pictures: `<img>` PNG/GIF reduced to 16 colors and drawn with ▀▄ blocks; `<pre>` art too.
 - No JavaScript.
 
@@ -199,12 +199,37 @@ Notes:
 - Unknown `data-chart` types and non-numeric values are slide warnings; unknown types draw as
   a (frameless) table.
 
-### 6. Animations
-- [ ] Builds (`data-step`, `data-build`), PgDn/PgUp through steps
-- [ ] Timer-driven event loop (channel + deadlines)
-- [ ] Transitions: cut, wipe ×4, dissolve, blinds, push
-- [ ] Text effects: typewriter, blink, marquee, rainbow
-- [ ] Frame animation (`data-frames`), animated GIFs later
+### 6. Animations ✅
+- [x] Builds (`data-step`, `data-build`), PgDn/PgUp through steps
+- [x] Timer-driven event loop (channel + deadlines)
+- [x] Transitions: cut, wipe ×4, dissolve, blinds, push
+- [x] Text effects: typewriter, blink, marquee, rainbow
+- [x] Frame animation (`data-frames`); animated GIFs still to do
+
+Notes:
+- `src/anim/mod.rs`: after styling, one pass gives every node its build step and innermost
+  animation (`ComputedStyle::step`, `anim`, and `box_anim` for its own background and border).
+  Layout copies them onto each display item as a `Tag`; a slide is laid out once and drawn
+  from a `Clock` (step, time on the slide, time in the step, forward or back).
+- `data-step` = from step N; empty = the step after the highest so far. `data-build` gives each
+  child element the next step (table rows for a table). Nested steps never come earlier than
+  their parent's. Hidden steps keep their space, so nothing reflows.
+- PgDn shows the next step, then the next slide; PgUp goes back a step, or to the previous slide
+  fully built. Going back shows typewritten text complete.
+- `data-effect="typewriter | marquee | rainbow"` (one per element; nest elements to combine).
+  Typewriter: 30 characters/s from when its step appears. Marquee: one line (`white-space:
+  nowrap`), 10 cells/s, clipped to the content box. Rainbow: six bright colors by column,
+  moving 8 columns/s. `text-decoration: blink` toggles every 267 ms; highlighted text keeps its
+  background. Effects change text only, not the element's border or background.
+- `data-frames` lays out its child elements in the same place and shows one at a time,
+  `data-fps` (default 4) per second.
+- Transitions: `<meta name="transition" content="name [0.5s|500ms]">` or `transition =` in
+  `deck.toml` (a bad deck value stops loading; a bad slide value is a warning). Default
+  durations: wipes and push 0.4 s, blinds 0.5 s (8-column slats), dissolve 0.6 s. Going back
+  plays the transition of the slide being left, mirrored. Home and End cut.
+- Event loop (`main.rs`): an input thread feeds a channel; the loop draws, then waits for input
+  or the next deadline from `App::next_deadline` (transition frames at 30 fps, the next
+  typewriter letter, the next blink, frame, marquee or rainbow step), or forever when still.
 
 ### 7. Authoring tools
 - [ ] Reload on save (`notify`)

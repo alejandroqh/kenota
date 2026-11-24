@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+  <title>Animations</title>
+  <meta name="transition" content="push">
+  <style>
+    body { background: blue; }
+    h2 { color: white; }
+    .row { display: flex; gap: 3; margin-bottom: 1; }
+    .steps { flex: 1; border: single; padding: 0 1; }
+    .steps ul { margin: 0; }
+    .film { border: double; padding: 0 1; color: yellow; }
+    .film pre { margin: 0; }
+    .marquee { background: cyan; color: black; margin-bottom: 1; }
+  </style>
+</head>
+<body>
+  <h2>Animations</h2>
+  <div class="row">
+    <div class="steps">
+      <ul data-build>
+        <li>PgDn shows the next build step</li>
+        <li><code>data-build</code> reveals a list item by item</li>
+        <li><code>data-step</code> works on any element</li>
+      </ul>
+    </div>
+    <div class="film" data-frames data-fps="8">
+      <pre>█           
+            
+            </pre>
+      <pre>▓█          
+            
+            </pre>
+      <pre>▒▓█         
+█           
+            </pre>
+      <pre>░▒▓█        
+▓█          
+            </pre>
+      <pre> ░▒▓█       
+▒▓█         
+█           </pre>
+      <pre>  ░▒▓█      
+░▒▓█        
+▓█          </pre>
+      <pre>   ░▒▓█     
+ ░▒▓█       
+▒▓█         </pre>
+      <pre>    ░▒▓█    
+  ░▒▓█      
+░▒▓█        </pre>
+      <pre>     ░▒▓█   
+   ░▒▓█     
+ ░▒▓█       </pre>
+      <pre>      ░▒▓█  
+    ░▒▓█    
+  ░▒▓█      </pre>
+      <pre>       ░▒▓█ 
+     ░▒▓█   
+   ░▒▓█     </pre>
+      <pre>        ░▒▓█
+      ░▒▓█  
+    ░▒▓█    </pre>
+      <pre>         ░▒▓
+       ░▒▓█ 
+     ░▒▓█   </pre>
+      <pre>          ░▒
+        ░▒▓█
+      ░▒▓█  </pre>
+      <pre>           ░
+         ░▒▓
+       ░▒▓█ </pre>
+      <pre>            
+          ░▒
+        ░▒▓█</pre>
+      <pre>            
+           ░
+         ░▒▓</pre>
+      <pre>            
+            
+          ░▒</pre>
+      <pre>            
+            
+           ░</pre>
+    </div>
+  </div>
+  <p data-step data-effect="typewriter">The typewriter effect types its text a letter at a time.</p>
+  <p data-step>Effects: <span data-effect="rainbow">rainbow colors</span>,
+    <span style="text-decoration: blink">blinking text</span> and a marquee.</p>
+  <div class="marquee" data-effect="marquee">Transitions between slides: cut, wipe-left, wipe-right, wipe-up, wipe-down, dissolve, blinds and push.</div>
+  <p><code>data-frames</code> shows its children in turn, like the box at the top right.</p>
+</body>
+</html>

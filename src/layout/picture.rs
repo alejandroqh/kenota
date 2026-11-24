@@ -26,7 +26,7 @@ pub(super) fn layout(
     ctx: &mut Ctx<'_>,
 ) -> i32 {
     let Some(picture) = picture(node, ctx.assets) else {
-        ctx.layer.items.push(Item::Text {
+        ctx.layer.push(Item::Text {
             x,
             y,
             text: alt_text(node),
@@ -40,7 +40,9 @@ pub(super) fn layout(
         usize::try_from(rows * 2).unwrap_or(0),
         node.style.dither,
     );
-    cell_items(&pixels.cells(), x, y, &mut ctx.layer.items);
+    let mut items = Vec::new();
+    cell_items(&pixels.cells(), x, y, &mut items);
+    ctx.layer.extend(items);
     rows
 }
 

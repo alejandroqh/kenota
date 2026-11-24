@@ -5,6 +5,7 @@
 //! canvas (80×25 by default) that is independent of the terminal. The
 //! canvas is then shown centered in the terminal with a footer bar.
 
+pub mod anim;
 pub mod app;
 pub mod assets;
 pub mod chart;

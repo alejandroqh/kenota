@@ -125,6 +125,8 @@ pub struct ComputedStyle {
     pub bold: bool,
     pub underline: bool,
     pub line_through: bool,
+    /// `text-decoration: blink`, drawn by the engine rather than the terminal.
+    pub blink: bool,
     pub text_align: TextAlign,
     pub white_space: WhiteSpace,
     pub text_transform: TextTransform,
@@ -134,6 +136,15 @@ pub struct ComputedStyle {
     /// `--dither: ordered`: pictures mix colors in a fine pattern to show
     /// shades the 16 colors lack.
     pub dither: bool,
+    /// The build step this element appears at (0 = with the slide). Set
+    /// from `data-step` and `data-build` by [`crate::anim::prepare`].
+    pub step: u32,
+    /// The innermost animation of this element's content, an index into
+    /// the slide's [`crate::anim::Timeline`].
+    pub anim: Option<u32>,
+    /// The innermost animation of this element's own box (background,
+    /// border): its content's, minus the element's own `data-effect`.
+    pub box_anim: Option<u32>,
 
     // Not inherited.
     pub display: Display,
@@ -180,12 +191,16 @@ impl ComputedStyle {
             bold: false,
             underline: false,
             line_through: false,
+            blink: false,
             text_align: TextAlign::Left,
             white_space: WhiteSpace::Normal,
             text_transform: TextTransform::None,
             list_style_type: ListStyleType::Disc,
             font: None,
             dither: false,
+            step: 0,
+            anim: None,
+            box_anim: None,
             display: Display::Inline,
             background: None,
             margin: Edges::default(),
@@ -214,12 +229,16 @@ impl ComputedStyle {
             bold: self.bold,
             underline: self.underline,
             line_through: self.line_through,
+            blink: self.blink,
             text_align: self.text_align,
             white_space: self.white_space,
             text_transform: self.text_transform,
             list_style_type: self.list_style_type.clone(),
             font: self.font.clone(),
             dither: self.dither,
+            step: self.step,
+            anim: self.anim,
+            box_anim: self.anim,
             ..Self::root()
         }
     }
@@ -245,7 +264,7 @@ impl ComputedStyle {
             }
             "font-weight" => self.bold = values::font_weight(value).ok_or(invalid)?,
             "text-decoration" | "text-decoration-line" => {
-                (self.underline, self.line_through) =
+                (self.underline, self.line_through, self.blink) =
                     values::text_decoration(value).ok_or(invalid)?;
             }
             "display" => {

@@ -18,6 +18,7 @@ mod picture;
 mod plot;
 mod table;
 
+use std::collections::HashMap;
 use std::mem;
 
 use ratatui::layout::Rect;
@@ -59,16 +60,67 @@ pub enum Item {
 }
 
 impl Item {
-    fn translate(&mut self, dx: i32, dy: i32) {
+    /// Moves the item by `dx` columns and `dy` rows.
+    pub fn translate(&mut self, dx: i32, dy: i32) {
         let (Item::Fill { x, y, .. } | Item::Pattern { x, y, .. } | Item::Text { x, y, .. }) = self;
         *x += dx;
         *y += dy;
     }
 }
 
+/// When an item shows: from a build step, and under which animation.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Tag {
+    pub step: u32,
+    /// The innermost animation, in the slide's [`crate::anim::Timeline`].
+    pub anim: Option<u32>,
+}
+
+impl Tag {
+    /// The tag of content drawn in `style`.
+    pub fn of(style: &ComputedStyle) -> Self {
+        Self {
+            step: style.step,
+            anim: style.anim,
+        }
+    }
+
+    /// The tag of the background and border of a box in `style`.
+    fn of_box(style: &ComputedStyle) -> Self {
+        Self {
+            step: style.step,
+            anim: style.box_anim,
+        }
+    }
+
+    /// This tag inside an element tagged `outer`: the later step, the
+    /// innermost animation.
+    fn under(self, outer: Tag) -> Self {
+        Self {
+            step: self.step.max(outer.step),
+            anim: self.anim.or(outer.anim),
+        }
+    }
+}
+
+/// The content box of an element with a `data-effect`, and how wide its
+/// content is (a marquee scrolls that much).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Region {
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+    pub content_width: i32,
+}
+
 #[derive(Debug, Default)]
 pub struct DisplayList {
     pub items: Vec<Item>,
+    /// One per item.
+    pub tags: Vec<Tag>,
+    /// By animation, for elements with a `data-effect`.
+    pub regions: HashMap<u32, Region>,
     /// Rows used by the normal flow below the top of the layout area.
     /// Absolutely positioned boxes do not count.
     pub height: i32,
@@ -88,12 +140,12 @@ pub fn layout(root: &StyledNode, area: Rect, assets: &Assets) -> DisplayList {
         &mut ctx,
     );
     place_pending(area, &mut ctx);
-    let mut items = Vec::new();
-    ctx.layer.flatten(&mut items);
-    DisplayList {
-        items,
+    let mut list = DisplayList {
         height: root.style.margin.top + size.height,
-    }
+        ..DisplayList::default()
+    };
+    ctx.layer.flatten(&mut list);
+    list
 }
 
 /// How the terminal draws text in this style. `background` comes from an
@@ -108,6 +160,10 @@ pub(crate) fn text_style(style: &ComputedStyle, background: Option<Ega>) -> Styl
     }
     if style.line_through {
         out = out.add_modifier(Modifier::CROSSED_OUT);
+    }
+    if style.blink {
+        // Painting blinks it; the terminal never sees the modifier.
+        out = out.add_modifier(Modifier::SLOW_BLINK);
     }
     out
 }
@@ -194,18 +250,60 @@ impl Area {
     }
 }
 
-/// Items of one stacking layer. Each positioned box gets its own.
+/// Items of one stacking layer, with their tags. Each positioned box gets its own.
 #[derive(Debug, Default)]
 struct Layer {
     z: i32,
     items: Vec<Item>,
+    /// One per item.
+    tags: Vec<Tag>,
+    regions: Vec<(u32, Region)>,
     children: Vec<Layer>,
 }
 
 impl Layer {
+    fn len(&self) -> usize {
+        self.items.len()
+    }
+
+    fn push(&mut self, item: Item) {
+        self.push_tagged(item, Tag::default());
+    }
+
+    fn push_tagged(&mut self, item: Item, tag: Tag) {
+        self.items.push(item);
+        self.tags.push(tag);
+    }
+
+    fn extend(&mut self, items: impl IntoIterator<Item = Item>) {
+        for item in items {
+            self.push(item);
+        }
+    }
+
+    /// Inserts `items` before item `at`, tagged `tag`.
+    fn insert(&mut self, at: usize, items: Vec<Item>, tag: Tag) {
+        let count = items.len();
+        self.items.splice(at..at, items);
+        self.tags.splice(at..at, std::iter::repeat_n(tag, count));
+    }
+
+    /// Puts the items from `start` on inside an element tagged `outer`.
+    fn tag_from(&mut self, start: usize, outer: Tag) {
+        if outer != Tag::default() {
+            for tag in &mut self.tags[start..] {
+                *tag = tag.under(outer);
+            }
+        }
+    }
+
     fn translate(&mut self, dx: i32, dy: i32) {
         for item in &mut self.items {
             item.translate(dx, dy);
+        }
+        for (_, region) in &mut self.regions {
+            region.x += dx;
+            region.y += dy;
         }
         for child in &mut self.children {
             child.translate(dx, dy);
@@ -214,14 +312,16 @@ impl Layer {
 
     /// Paint order: child layers with a negative `z-index`, this layer's
     /// items, then the other child layers. Equal `z-index` keeps document order.
-    fn flatten(mut self, out: &mut Vec<Item>) {
+    fn flatten(mut self, out: &mut DisplayList) {
         self.children.sort_by_key(|layer| layer.z);
         let split = self.children.partition_point(|layer| layer.z < 0);
         let above = self.children.split_off(split);
         for layer in self.children {
             layer.flatten(out);
         }
-        out.extend(self.items);
+        out.items.extend(self.items);
+        out.tags.extend(self.tags);
+        out.regions.extend(self.regions);
         for layer in above {
             layer.flatten(out);
         }
@@ -324,7 +424,7 @@ fn layout_box<'a>(
             mem::take(&mut ctx.pending),
         )
     });
-    let first_item = ctx.layer.items.len();
+    let first_item = ctx.layer.len();
     let fixed_height = style.height.or(stretch).map(|h| h.max(0));
 
     let is_table = is_table(node);
@@ -348,8 +448,15 @@ fn layout_box<'a>(
     // canvas, which `render` paints first; painting them here again would
     // cover boxes with a negative `z-index`.
     let canvas = matches!(node.tag(), Some("html" | "body"));
+    if node.attr("data-effect").is_some()
+        && let Some(anim) = style.anim
+    {
+        let region = region(style, area, &ctx.layer.items[first_item..]);
+        ctx.layer.regions.push((anim, region));
+    }
+    ctx.layer.tag_from(first_item, Tag::of(style));
     let under = decorations(style, area, !canvas, !is_table);
-    ctx.layer.items.splice(first_item..first_item, under);
+    ctx.layer.insert(first_item, under, Tag::of_box(style));
 
     if let Some((parent, pending)) = outer {
         let border = style.border.widths();
@@ -402,7 +509,7 @@ fn content_box<'a>(
     let content_y = y + top;
 
     if let Some(marker) = marker {
-        ctx.layer.items.push(Item::Text {
+        ctx.layer.push(Item::Text {
             x: content_x,
             y: content_y,
             text: marker.text.clone(),
@@ -428,8 +535,11 @@ fn content_box<'a>(
             let rows = plot::layout(node, content_x, content_y, content_width, inner, ctx);
             (rows, 0)
         }
+        _ if node.attr("data-frames").is_some() => {
+            frames(node, content_x, content_y, content_width, ctx)
+        }
         _ if node.tag() == Some("hr") => {
-            ctx.layer.items.push(Item::Text {
+            ctx.layer.push(Item::Text {
                 x: content_x,
                 y: content_y,
                 text: "─".repeat(usize::try_from(content_width).unwrap_or(0)),
@@ -521,15 +631,8 @@ fn flow<'a>(node: &'a StyledNode, x: i32, y: i32, width: i32, ctx: &mut Ctx<'a>)
                 return;
             }
             let top = *cursor + *pending;
-            let (lines, absolute) = inline::layout(
-                run,
-                &node.style,
-                ctx.assets,
-                x,
-                top,
-                width,
-                &mut ctx.layer.items,
-            );
+            let (lines, absolute) =
+                inline::layout(run, &node.style, ctx.assets, x, top, width, &mut ctx.layer);
             ctx.pending
                 .extend(absolute.into_iter().map(|node| Pending { node, x, y: top }));
             if lines > 0 {
@@ -559,6 +662,64 @@ fn flow<'a>(node: &'a StyledNode, x: i32, y: i32, width: i32, ctx: &mut Ctx<'a>)
     flush(&mut run, &mut cursor, &mut pending_margin, ctx);
 
     (cursor - y, pending_margin)
+}
+
+/// The children of a `data-frames` element, all in the same place: only
+/// one shows at a time. Returns the tallest one's height, and how far the
+/// deepest bottom margin reaches past it.
+fn frames<'a>(node: &'a StyledNode, x: i32, y: i32, width: i32, ctx: &mut Ctx<'a>) -> (i32, i32) {
+    let mut height = 0;
+    let mut reach = 0;
+    for child in node.children.iter().filter(|child| child.tag().is_some()) {
+        if is_absolute(child) {
+            ctx.pending.push(Pending { node: child, x, y });
+        } else if is_block_level(child) {
+            let top = y + child.style.margin.top;
+            let size = block(child, x, top, width, None, ctx);
+            height = height.max(top - y + size.height);
+            reach = reach.max(top - y + size.height + size.margin_bottom);
+        } else {
+            let (lines, absolute) = inline::layout(
+                &[child],
+                &node.style,
+                ctx.assets,
+                x,
+                y,
+                width,
+                &mut ctx.layer,
+            );
+            ctx.pending
+                .extend(absolute.into_iter().map(|node| Pending { node, x, y }));
+            height = height.max(lines);
+        }
+    }
+    (height, (reach - height).max(0))
+}
+
+/// The region of an element with a `data-effect`: its content box, and
+/// the width of its text.
+fn region(style: &ComputedStyle, area: Area, content: &[Item]) -> Region {
+    let border = style.border.widths();
+    let padding = style.padding;
+    let x = area.x + border.left + padding.left;
+    let right = content
+        .iter()
+        .filter_map(|item| match item {
+            Item::Text { x, text, .. } => Some(
+                x + i32::try_from(unicode_width::UnicodeWidthStr::width(text.as_str()))
+                    .unwrap_or(0),
+            ),
+            _ => None,
+        })
+        .max()
+        .unwrap_or(x);
+    Region {
+        x,
+        y: area.y + border.top + padding.top,
+        width: area.width - border.left - border.right - padding.left - padding.right,
+        height: area.height - border.top - border.bottom - padding.top - padding.bottom,
+        content_width: right - x,
+    }
 }
 
 /// Places the absolutely positioned boxes collected so far inside `containing`.

@@ -185,7 +185,7 @@ fn style_element(
     });
     // `width` and `height` attributes on pictures and tables, in cells.
     // Like in browsers, any CSS rule overrides them.
-    let size_hints: Vec<Declaration> = if matches!(element.value().name(), "img" | "table") {
+    let mut size_hints: Vec<Declaration> = if matches!(element.value().name(), "img" | "table") {
         ["width", "height"]
             .into_iter()
             .filter_map(|name| {
@@ -200,6 +200,18 @@ fn style_element(
     } else {
         Vec::new()
     };
+    // A marquee scrolls one line of text.
+    if element
+        .value()
+        .attr("data-effect")
+        .is_some_and(|effect| effect.trim().eq_ignore_ascii_case("marquee"))
+    {
+        size_hints.push(Declaration {
+            name: "white-space".into(),
+            value: "nowrap".into(),
+            important: false,
+        });
+    }
 
     let mut matched: Vec<(Priority, &Declaration)> = size_hints
         .iter()

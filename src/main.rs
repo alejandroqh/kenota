@@ -1,4 +1,7 @@
 use std::path::PathBuf;
+use std::sync::mpsc::{self, RecvTimeoutError};
+use std::thread;
+use std::time::Instant;
 
 use clap::{Parser, ValueEnum};
 use color_eyre::Result;
@@ -50,7 +53,8 @@ fn main() -> Result<()> {
 
     // Load before touching the terminal, so errors print normally.
     let deck = Deck::load(&cli.deck)?;
-    let mut app = App::new(deck, cli.slide.saturating_sub(1), cli.colors.truecolor());
+    let start = cli.slide.saturating_sub(1);
+    let mut app = App::new(deck, start, cli.colors.truecolor(), Instant::now());
 
     let terminal = ratatui::init();
     let result = run(terminal, &mut app);
@@ -58,11 +62,47 @@ fn main() -> Result<()> {
     result
 }
 
+/// What wakes the event loop.
+enum Message {
+    Input(Event),
+}
+
+/// Draws, then sleeps until input arrives or the screen next changes by
+/// itself (an animation frame); with nothing animating, until input.
 fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
-    while !app.should_quit() {
-        terminal.draw(|frame| app.draw(frame))?;
-        if let Event::Key(key) = event::read()? {
-            app.handle_key(key);
+    let (sender, messages) = mpsc::channel();
+    thread::spawn(move || {
+        while let Ok(event) = event::read() {
+            if sender.send(Message::Input(event)).is_err() {
+                break;
+            }
+        }
+    });
+
+    loop {
+        let now = Instant::now();
+        terminal.draw(|frame| app.draw(frame, now))?;
+        let message = match app.next_deadline(now) {
+            Some(deadline) => {
+                match messages.recv_timeout(deadline.saturating_duration_since(Instant::now())) {
+                    Ok(message) => Some(message),
+                    Err(RecvTimeoutError::Timeout) => None,
+                    Err(RecvTimeoutError::Disconnected) => break,
+                }
+            }
+            None => match messages.recv() {
+                Ok(message) => Some(message),
+                Err(_) => break,
+            },
+        };
+        // Handle everything waiting before drawing again.
+        for Message::Input(event) in message.into_iter().chain(messages.try_iter()) {
+            if let Event::Key(key) = event {
+                app.handle_key(key, Instant::now());
+            }
+        }
+        if app.should_quit() {
+            break;
         }
     }
     Ok(())

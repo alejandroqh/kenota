@@ -116,17 +116,19 @@ pub(super) fn font_weight(value: &str) -> Option<bool> {
 }
 
 /// `text-decoration`: returns (underline, line-through).
-pub(super) fn text_decoration(value: &str) -> Option<(bool, bool)> {
-    let (mut underline, mut line_through) = (false, false);
+/// `underline`, `line-through` and `blink`, in any combination, or `none`.
+pub(super) fn text_decoration(value: &str) -> Option<(bool, bool, bool)> {
+    let (mut underline, mut line_through, mut blink) = (false, false, false);
     for part in split_top_level(value, ' ') {
         match part.to_ascii_lowercase().as_str() {
             "none" => {}
             "underline" => underline = true,
             "line-through" => line_through = true,
+            "blink" => blink = true,
             _ => return None,
         }
     }
-    Some((underline, line_through))
+    Some((underline, line_through, blink))
 }
 
 pub(super) fn list_style_type(value: &str) -> Option<ListStyleType> {
@@ -386,9 +388,10 @@ mod tests {
     fn decorations_and_weights() {
         assert_eq!(
             text_decoration("underline line-through"),
-            Some((true, true))
+            Some((true, true, false))
         );
-        assert_eq!(text_decoration("none"), Some((false, false)));
+        assert_eq!(text_decoration("blink"), Some((false, false, true)));
+        assert_eq!(text_decoration("none"), Some((false, false, false)));
         assert_eq!(text_decoration("wavy"), None);
         assert_eq!(font_weight("700"), Some(true));
         assert_eq!(font_weight("400"), Some(false));

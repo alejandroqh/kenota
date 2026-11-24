@@ -10,6 +10,8 @@ use std::str::Chars;
 use color_eyre::eyre::{Result, WrapErr, bail, eyre};
 use serde::Deserialize;
 
+use crate::anim::Timeline;
+use crate::anim::transition::Transition;
 use crate::assets::Assets;
 use crate::fonts::Fonts;
 use crate::html;
@@ -38,6 +40,11 @@ pub struct Slide {
     pub title: String,
     /// The styled `<html>` element.
     pub root: StyledNode,
+    /// Build steps and animations.
+    pub timeline: Timeline,
+    /// `<meta name="transition">`: how this slide replaces the one before.
+    /// `None` uses the deck's.
+    pub transition: Option<Transition>,
     /// Problems found in this slide and the deck stylesheet: CSS that
     /// was ignored, fonts that do not exist, pictures that cannot be shown.
     pub warnings: Vec<String>,
@@ -49,8 +56,8 @@ pub struct DeckConfig {
     pub title: Option<String>,
     pub size: ScreenSize,
     pub footer: bool,
-    /// Default transition for every slide. Not used until milestone 6.
-    pub transition: Option<String>,
+    /// Default transition for every slide: `"dissolve"`, `"push 0.8s"`, …
+    pub transition: Option<Transition>,
 }
 
 impl Default for DeckConfig {
@@ -187,6 +194,17 @@ impl Slide {
         let mut parsed = html::parse(source, deck_css);
         check_fonts(&parsed.root, fonts, &mut parsed.warnings);
         crate::chart::check(&parsed.root, &mut parsed.warnings);
+        let transition =
+            parsed
+                .transition
+                .as_deref()
+                .and_then(|text| match Transition::parse(text) {
+                    Ok(transition) => Some(transition),
+                    Err(problem) => {
+                        parsed.warnings.push(problem);
+                        None
+                    }
+                });
         let title = parsed.title.unwrap_or_else(|| {
             path.file_stem()
                 .map(|s| s.to_string_lossy().into_owned())
@@ -196,8 +214,18 @@ impl Slide {
             path,
             title,
             root: parsed.root,
+            timeline: parsed.timeline,
+            transition,
             warnings: parsed.warnings,
         }
+    }
+
+    /// How this slide replaces the one before: its own transition, else
+    /// the deck's, else a cut.
+    pub fn transition_in(&self, config: &DeckConfig) -> Transition {
+        self.transition
+            .or(config.transition)
+            .unwrap_or(Transition::CUT)
     }
 
     /// The canvas color: the body's background, else the html element's, else black.
@@ -401,7 +429,7 @@ mod tests {
         let dir = deck_dir(&[
             (
                 "deck.toml",
-                "title = \"Talk\"\nsize = \"80x50\"\nfooter = false\n",
+                "title = \"Talk\"\nsize = \"80x50\"\nfooter = false\ntransition = \"push 1s\"\n",
             ),
             ("a.html", ""),
         ]);
@@ -409,6 +437,10 @@ mod tests {
         assert_eq!(config.title.as_deref(), Some("Talk"));
         assert_eq!(config.size, ScreenSize::new(80, 50));
         assert!(!config.footer);
+        assert_eq!(
+            config.transition.map(|t| t.duration),
+            Some(std::time::Duration::from_secs(1))
+        );
     }
 
     #[test]
@@ -416,6 +448,10 @@ mod tests {
         let unknown = deck_dir(&[("deck.toml", "colour = 1\n"), ("a.html", "")]);
         let err = format!("{:#}", Deck::load(unknown.path()).unwrap_err());
         assert!(err.contains("colour"), "{err}");
+
+        let transition = deck_dir(&[("deck.toml", "transition = \"spin\"\n"), ("a.html", "")]);
+        let err = format!("{:#}", Deck::load(transition.path()).unwrap_err());
+        assert!(err.contains("unknown transition `spin`"), "{err}");
 
         let size = deck_dir(&[("deck.toml", "size = \"100x30\"\n"), ("a.html", "")]);
         let err = format!("{:#}", Deck::load(size.path()).unwrap_err());

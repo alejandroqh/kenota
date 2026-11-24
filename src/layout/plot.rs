@@ -74,10 +74,13 @@ pub(super) fn layout<'a>(
         return used;
     }
     let height = height.map(|h| h - used);
-    used + match chart.kind {
-        Kind::Pie => pie(&chart, x, cursor, width, height, &mut ctx.layer.items),
-        _ => axes(node, &chart, x, cursor, width, height, &mut ctx.layer.items),
-    }
+    let mut items = Vec::new();
+    let rows = match chart.kind {
+        Kind::Pie => pie(&chart, x, cursor, width, height, &mut items),
+        _ => axes(node, &chart, x, cursor, width, height, &mut items),
+    };
+    ctx.layer.extend(items);
+    used + rows
 }
 
 /// The chart's border-box widths: its natural width fits every bar and
