@@ -8,6 +8,7 @@
 //! in layers ordered by `z-index`. Coordinates are cells and may run past
 //! the canvas; painting clips them.
 
+mod bigtext;
 mod border;
 mod flex;
 mod inline;
@@ -20,6 +21,7 @@ use std::mem;
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
 
+use crate::fonts::Fonts;
 use crate::palette::Ega;
 use crate::style::{ComputedStyle, Display, Length, Position, StyledNode};
 use marker::Marker;
@@ -69,10 +71,11 @@ pub struct DisplayList {
     pub height: i32,
 }
 
-/// Lays out `root` (normally the `<html>` element) inside `area`.
-pub fn layout(root: &StyledNode, area: Rect) -> DisplayList {
+/// Lays out `root` (normally the `<html>` element) inside `area`. Big
+/// text looks its fonts up in `fonts`.
+pub fn layout(root: &StyledNode, area: Rect, fonts: &Fonts) -> DisplayList {
     let area = Area::from(area);
-    let mut ctx = Ctx::default();
+    let mut ctx = Ctx::new(fonts);
     let size = block(
         root,
         area.x,
@@ -230,12 +233,22 @@ struct Pending<'a> {
     y: i32,
 }
 
-#[derive(Default)]
 struct Ctx<'a> {
+    fonts: &'a Fonts,
     /// The layer new items go to.
     layer: Layer,
     /// Absolutely positioned boxes found since the nearest positioned ancestor.
     pending: Vec<Pending<'a>>,
+}
+
+impl<'a> Ctx<'a> {
+    fn new(fonts: &'a Fonts) -> Self {
+        Self {
+            fonts,
+            layer: Layer::default(),
+            pending: Vec::new(),
+        }
+    }
 }
 
 struct BlockSize {
@@ -255,19 +268,19 @@ fn block<'a>(
     marker: Option<&Marker>,
     ctx: &mut Ctx<'a>,
 ) -> BlockSize {
-    let (offset, box_width) = horizontal(node, width);
+    let (offset, box_width) = horizontal(node, width, ctx.fonts);
     layout_box(node, x + offset, y, box_width, None, marker, ctx)
 }
 
 /// Where an in-flow block starts inside a container `width` wide, and how
 /// wide its border box is. Tables shrink to fit; `auto` margins center.
-fn horizontal(node: &StyledNode, width: i32) -> (i32, i32) {
+fn horizontal(node: &StyledNode, width: i32, fonts: &Fonts) -> (i32, i32) {
     let style = &node.style;
     let margin = style.margin;
     let available = width - margin.left - margin.right;
     let box_width = match style.width {
         Some(w) => w.resolve(width),
-        None if style.display == Display::Table => measure::intrinsic(node).fit(available),
+        None if style.display == Display::Table => measure::intrinsic(node, fonts).fit(available),
         None => available,
     }
     .max(0);
@@ -491,8 +504,15 @@ fn flow<'a>(node: &'a StyledNode, x: i32, y: i32, width: i32, ctx: &mut Ctx<'a>)
                 return;
             }
             let top = *cursor + *pending;
-            let (lines, absolute) =
-                inline::layout(run, &node.style, x, top, width, &mut ctx.layer.items);
+            let (lines, absolute) = inline::layout(
+                run,
+                &node.style,
+                ctx.fonts,
+                x,
+                top,
+                width,
+                &mut ctx.layer.items,
+            );
             ctx.pending
                 .extend(absolute.into_iter().map(|node| Pending { node, x, y: top }));
             if lines > 0 {
@@ -553,7 +573,7 @@ fn absolute<'a>(pending: &Pending<'a>, containing: Area, ctx: &mut Ctx<'a>) {
     let width = match style.width {
         Some(w) => w.resolve(containing.width),
         None if left.is_some() && right.is_some() => available,
-        None => measure::intrinsic(node).fit(available),
+        None => measure::intrinsic(node, ctx.fonts).fit(available),
     }
     .max(0);
     let x = match (left, right) {
@@ -571,7 +591,7 @@ fn absolute<'a>(pending: &Pending<'a>, containing: Area, ctx: &mut Ctx<'a>) {
     let y = match (top, bottom) {
         (Some(top), _) => containing.y + top + margin.top,
         (None, Some(bottom)) => {
-            containing.bottom() - bottom - margin.bottom - measure::height(node, width)
+            containing.bottom() - bottom - margin.bottom - measure::height(node, width, ctx.fonts)
         }
         (None, None) => pending.y + margin.top,
     };
@@ -642,7 +662,11 @@ mod tests {
         assert!(slide.warnings.is_empty(), "{:?}", slide.warnings);
         let area = Rect::new(0, 0, width, height);
         let mut buf = Buffer::empty(area);
-        paint(&layout(&slide.root, area).items, &mut buf, area);
+        paint(
+            &layout(&slide.root, area, &Fonts::bundled()).items,
+            &mut buf,
+            area,
+        );
         buf
     }
 
@@ -898,7 +922,7 @@ mod tests {
         assert_eq!(text(html, 12, 4), "flow\n    ┌───┐\nafte│abs│\n    └───┘");
         let slide = html::parse(&format!("<style>body {{ margin: 0 }}</style>{html}"), None);
         assert_eq!(
-            layout(&slide.root, Rect::new(0, 0, 12, 4)).height,
+            layout(&slide.root, Rect::new(0, 0, 12, 4), &Fonts::bundled()).height,
             3,
             "only the flow counts"
         );
@@ -1028,9 +1052,60 @@ mod tests {
     }
 
     #[test]
+    fn h1_draws_big_letters() {
+        assert_eq!(
+            text("<h1>Hi</h1><p>after</p>", 12, 6),
+            "█   █ ▀\n█▄▄▄█ █\n█   █ █\n▀   ▀ ▀\n\nafter"
+        );
+        assert_eq!(text("<h1 style='--font: none'>Hi</h1>", 12, 1), "Hi");
+    }
+
+    #[test]
+    fn data_font_picks_a_font() {
+        assert_eq!(
+            text("<p data-font='small'>Hi</p>", 12, 3),
+            "█ █ ▀█▀\n█▀█  █\n▀ ▀ ▀▀▀"
+        );
+        assert_eq!(
+            text("<p data-font='small' style='--font: none'>Hi</p>", 12, 1),
+            "Hi",
+            "the style attribute beats data-font"
+        );
+    }
+
+    #[test]
+    fn big_text_wraps_and_centers() {
+        assert_eq!(
+            text("<h1 style='text-align: center'>I I</h1>", 9, 8),
+            "   ▀█▀\n    █\n    █\n   ▀▀▀\n   ▀█▀\n    █\n    █\n   ▀▀▀"
+        );
+    }
+
+    #[test]
+    fn big_text_takes_inline_colors_and_leaves_blanks_alone() {
+        let buf = render("<h1 style='--fill: \"░\"'>I<em>I</em></h1>", 10, 4);
+        assert_eq!(buf[(0, 1)].symbol(), "░", "blank cells keep the fill");
+        assert_eq!(buf[(1, 1)].symbol(), "█");
+        assert_eq!(buf[(1, 1)].fg, Ega::White.color());
+        assert_eq!(buf[(5, 1)].fg, Ega::Yellow.color());
+    }
+
+    #[test]
+    fn big_text_in_a_flex_row_measures_its_width() {
+        assert_eq!(
+            text(
+                "<div style='display: flex; gap: 1'><h1 style='margin: 0'>I</h1><p>x</p></div>",
+                12,
+                1
+            ),
+            "▀█▀ x"
+        );
+    }
+
+    #[test]
     fn display_list_reports_overflow_height() {
         let slide = html::parse("<style>body{margin:0}</style><p>a</p><p>b</p>", None);
-        let list = layout(&slide.root, Rect::new(0, 0, 10, 2));
+        let list = layout(&slide.root, Rect::new(0, 0, 10, 2), &Fonts::bundled());
         assert_eq!(
             list.height, 3,
             "two paragraphs and the margin between, past the 2-row area"

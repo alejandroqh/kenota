@@ -28,7 +28,7 @@ body {
   margin: 1 2 0 2;
 }
 
-h1 { color: white; font-weight: bold; margin-bottom: 1; }
+h1 { color: white; font-weight: bold; margin-bottom: 1; --font: block; }
 h2 { color: yellow; margin-bottom: 1; }
 h3 { color: lightcyan; margin-bottom: 1; }
 h4, h5, h6 { color: white; margin-bottom: 1; }

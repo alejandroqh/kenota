@@ -129,6 +129,8 @@ pub struct ComputedStyle {
     pub white_space: WhiteSpace,
     pub text_transform: TextTransform,
     pub list_style_type: ListStyleType,
+    /// `--font`: the FIGlet font for big text, by name. `None` is ordinary text.
+    pub font: Option<String>,
 
     // Not inherited.
     pub display: Display,
@@ -179,6 +181,7 @@ impl ComputedStyle {
             white_space: WhiteSpace::Normal,
             text_transform: TextTransform::None,
             list_style_type: ListStyleType::Disc,
+            font: None,
             display: Display::Inline,
             background: None,
             margin: Edges::default(),
@@ -211,6 +214,7 @@ impl ComputedStyle {
             white_space: self.white_space,
             text_transform: self.text_transform,
             list_style_type: self.list_style_type.clone(),
+            font: self.font.clone(),
             ..Self::root()
         }
     }
@@ -285,6 +289,7 @@ impl ComputedStyle {
             }
             "box-shadow" => self.shadow = values::shadow(value).ok_or(invalid)?,
             "--fill" => self.pattern = values::pattern(value).ok_or(invalid)?,
+            "--font" => self.font = values::font(value).ok_or(invalid)?,
             "position" => {
                 self.position = keyword(
                     value,

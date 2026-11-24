@@ -10,6 +10,7 @@ use std::str::Chars;
 use color_eyre::eyre::{Result, WrapErr, bail, eyre};
 use serde::Deserialize;
 
+use crate::fonts::Fonts;
 use crate::html;
 use crate::palette::Ega;
 use crate::style::StyledNode;
@@ -22,6 +23,8 @@ pub const STYLESHEET_FILE: &str = "style.css";
 pub struct Deck {
     pub root: PathBuf,
     pub config: DeckConfig,
+    /// Bundled fonts plus the deck's own `.flf` files.
+    pub fonts: Fonts,
     /// Never empty.
     pub slides: Vec<Slide>,
 }
@@ -33,7 +36,8 @@ pub struct Slide {
     pub title: String,
     /// The styled `<html>` element.
     pub root: StyledNode,
-    /// CSS problems found in this slide and the deck stylesheet.
+    /// Problems found in this slide and the deck stylesheet: CSS that
+    /// was ignored, fonts that do not exist.
     pub warnings: Vec<String>,
 }
 
@@ -134,6 +138,8 @@ impl Deck {
             None
         };
 
+        let fonts = Fonts::load(root)?;
+
         let mut paths = Vec::new();
         for entry in fs::read_dir(root).wrap_err_with(|| format!("reading {}", root.display()))? {
             let path = entry?.path();
@@ -154,22 +160,25 @@ impl Deck {
             .map(|path| {
                 let source = fs::read_to_string(&path)
                     .wrap_err_with(|| format!("reading {}", path.display()))?;
-                Ok(Slide::parse(path, &source, deck_css.as_deref()))
+                Ok(Slide::parse(path, &source, deck_css.as_deref(), &fonts))
             })
             .collect::<Result<Vec<_>>>()?;
 
         Ok(Deck {
             root: root.to_path_buf(),
             config,
+            fonts,
             slides,
         })
     }
 }
 
 impl Slide {
-    /// Builds a slide from its HTML source. `deck_css` is the deck's `style.css`.
-    pub fn parse(path: PathBuf, source: &str, deck_css: Option<&str>) -> Slide {
-        let parsed = html::parse(source, deck_css);
+    /// Builds a slide from its HTML source. `deck_css` is the deck's
+    /// `style.css`; `fonts` are the fonts big text may use.
+    pub fn parse(path: PathBuf, source: &str, deck_css: Option<&str>, fonts: &Fonts) -> Slide {
+        let mut parsed = html::parse(source, deck_css);
+        check_fonts(&parsed.root, fonts, &mut parsed.warnings);
         let title = parsed.title.unwrap_or_else(|| {
             path.file_stem()
                 .map(|s| s.to_string_lossy().into_owned())
@@ -204,6 +213,22 @@ impl Slide {
                     pattern.color.unwrap_or_else(|| node.style.text_color()),
                 ))
             })
+    }
+}
+
+/// Warns about `--font` names that no font matches. Such text is drawn plainly.
+fn check_fonts(node: &StyledNode, fonts: &Fonts, warnings: &mut Vec<String>) {
+    if let Some(name) = &node.style.font
+        && fonts.get(name).is_none()
+    {
+        let available = fonts.names().collect::<Vec<_>>().join(", ");
+        let warning = format!("unknown font `{name}` drawn as plain text (fonts: {available})");
+        if !warnings.contains(&warning) {
+            warnings.push(warning);
+        }
+    }
+    for child in &node.children {
+        check_fonts(child, fonts, warnings);
     }
 }
 
@@ -259,6 +284,7 @@ pub(crate) fn test_deck(titles: &[&str]) -> Deck {
     Deck {
         root: PathBuf::from("test-deck"),
         config: DeckConfig::default(),
+        fonts: Fonts::bundled(),
         slides: titles.iter().map(|title| test_slide(title, "")).collect(),
     }
 }
@@ -270,6 +296,7 @@ pub(crate) fn test_slide(title: &str, body: &str) -> Slide {
         PathBuf::from(format!("{title}.html")),
         &format!("<title>{title}</title>{body}"),
         None,
+        &Fonts::bundled(),
     )
 }
 
@@ -331,6 +358,34 @@ mod tests {
         assert_eq!(slide.background(), Ega::Black);
         let slide = test_slide("t", "<body style='background: transparent'>x</body>");
         assert_eq!(slide.background(), Ega::Black);
+    }
+
+    #[test]
+    fn unknown_fonts_are_reported() {
+        let slide = test_slide(
+            "t",
+            "<p data-font='gothic'>x</p><h2 style='--font: gothic'>y</h2>",
+        );
+        assert_eq!(
+            slide.warnings,
+            ["unknown font `gothic` drawn as plain text (fonts: big, block, small)"]
+        );
+    }
+
+    #[test]
+    fn deck_fonts_are_loaded() {
+        let mut font = String::from("flf2a$ 1 1 3 -1 0\n");
+        for _ in 32..=126 {
+            font.push_str("#@@\n");
+        }
+        let dir = deck_dir(&[("tiny.flf", &font), ("a.html", "<p data-font='tiny'>x</p>")]);
+        let deck = Deck::load(dir.path()).unwrap();
+        assert!(deck.fonts.get("tiny").is_some());
+        assert!(
+            deck.slides[0].warnings.is_empty(),
+            "{:?}",
+            deck.slides[0].warnings
+        );
     }
 
     #[test]

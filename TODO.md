@@ -156,8 +156,19 @@ Notes:
   row of `<th>` counts as a header, `<caption>`, row backgrounds. Columns fit content.
 - Not yet: `colspan`/`rowspan`, flex wrapping and columns, `overflow` clipping.
 
-### 4. Large text
-- [ ] FIGlet `.flf` loader, 2–3 bundled fonts, `<h1>` + `data-font`
+### 4. Large text ✅
+- [x] FIGlet `.flf` loader, 2–3 bundled fonts, `<h1>` + `data-font`
+
+Notes:
+- `src/figlet.rs` reads `flf2a` fonts (code-tagged characters too) and lays them out like
+  `figlet`: full width, kerning, or smushing with the six rules; hardblanks draw as spaces.
+- Bundled fonts, drawn for dos-kenota (`src/fonts/*.flf`): `block` (5×8 pixels in half
+  blocks, 4 rows, the `<h1>` default), `small` (3×5 capitals, 3 rows), `big` (full blocks,
+  8 rows). A deck adds fonts with `.flf` files in its folder or `fonts/`, named by file.
+- `--font: <name> | none` is inherited; `data-font="name"` on an element works like an inline
+  `--font`. Unknown names become slide warnings and draw plain text.
+- Big text wraps between words, follows `text-align`, takes colors from inline elements,
+  and leaves blank cells untouched so fills show between letters.
 
 ### 5. Pixel canvas
 - [ ] Half-block pixel canvas shared by images and charts

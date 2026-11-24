@@ -134,7 +134,11 @@ mod tests {
         assert!(slide.warnings.is_empty(), "{:?}", slide.warnings);
         let area = Rect::new(0, 0, width, height);
         let mut buf = Buffer::empty(area);
-        paint(&layout(&slide.root, area).items, &mut buf, area);
+        paint(
+            &layout(&slide.root, area, &crate::fonts::Fonts::bundled()).items,
+            &mut buf,
+            area,
+        );
         buffer_text(&buf)
     }
 

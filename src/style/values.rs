@@ -259,6 +259,20 @@ pub(super) fn pattern(value: &str) -> Option<Option<Pattern>> {
     Some(Some(Pattern { symbol, color }))
 }
 
+/// `--font`: a font name (bare or quoted, any case), or `none` (`Some(None)`).
+pub(super) fn font(value: &str) -> Option<Option<String>> {
+    let value = value.trim();
+    if value.eq_ignore_ascii_case("none") {
+        return Some(None);
+    }
+    let name = unquote(value).unwrap_or(value);
+    let valid = !name.is_empty()
+        && name
+            .chars()
+            .all(|c| c.is_alphanumeric() || matches!(c, '-' | '_' | '.'));
+    valid.then(|| Some(name.to_lowercase()))
+}
+
 /// `z-index`: an integer, or `auto` (0).
 pub(super) fn z_index(value: &str) -> Option<i32> {
     if value.trim().eq_ignore_ascii_case("auto") {
@@ -459,6 +473,15 @@ mod tests {
         let (edges, auto) = margins("auto 2").unwrap();
         assert_eq!(edges, Edges::from([0, 2, 0, 2]), "vertical auto is 0");
         assert_eq!(auto, AutoMargin::default());
+    }
+
+    #[test]
+    fn font_names() {
+        assert_eq!(font("Block"), Some(Some("block".into())));
+        assert_eq!(font("'my-font_2'"), Some(Some("my-font_2".into())));
+        assert_eq!(font("none"), Some(None));
+        assert_eq!(font("two words"), None);
+        assert_eq!(font("\"\""), None);
     }
 
     #[test]

@@ -6,13 +6,14 @@ use ratatui::style::Style;
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use super::measure::Intrinsic;
-use super::{Item, is_absolute, text_style};
+use super::{Item, bigtext, is_absolute, text_style};
+use crate::fonts::Fonts;
 use crate::palette::Ega;
 use crate::style::{ComputedStyle, Content, StyledNode, TextAlign, TextTransform};
 
 /// A piece of inline content.
 #[derive(Debug, PartialEq)]
-enum Atom {
+pub(super) enum Atom {
     Word(String, Style),
     /// A space; `true` when preserved (`white-space: pre…`).
     Space(Style, bool),
@@ -22,21 +23,23 @@ enum Atom {
 type Line = Vec<(String, Style)>;
 
 /// Lays out `run` (consecutive inline siblings) as lines starting at row
-/// `y`. Returns how many lines it took (whitespace-only runs take none),
+/// `y`. Returns how many rows it took (whitespace-only runs take none),
 /// and the absolutely positioned elements found inside, which are not
-/// part of the text.
+/// part of the text. A container with a `--font` draws big text.
+#[allow(clippy::too_many_arguments)]
 pub(super) fn layout<'a>(
     run: &[&'a StyledNode],
     container: &ComputedStyle,
+    fonts: &Fonts,
     x: i32,
     y: i32,
     width: i32,
     out: &mut Vec<Item>,
 ) -> (i32, Vec<&'a StyledNode>) {
-    let mut atoms = Vec::new();
-    let mut absolute = Vec::new();
-    for node in run {
-        collect(node, None, &mut atoms, &mut absolute);
+    let (atoms, absolute) = atoms(run);
+    if let Some(font) = bigtext::font(container, fonts) {
+        let rows = bigtext::layout(&atoms, font, container.text_align, x, y, width, out);
+        return (rows, absolute);
     }
     let lines = break_lines(
         &atoms,
@@ -52,10 +55,14 @@ pub(super) fn layout<'a>(
 }
 
 /// The narrowest and widest `run` can be laid out.
-pub(super) fn intrinsic(run: &[&StyledNode], container: &ComputedStyle) -> Intrinsic {
-    let mut atoms = Vec::new();
-    for node in run {
-        collect(node, None, &mut atoms, &mut Vec::new());
+pub(super) fn intrinsic(
+    run: &[&StyledNode],
+    container: &ComputedStyle,
+    fonts: &Fonts,
+) -> Intrinsic {
+    let (atoms, _) = atoms(run);
+    if let Some(font) = bigtext::font(container, fonts) {
+        return bigtext::intrinsic(&atoms, font);
     }
     let width = |text: &str| i32::try_from(text.width()).unwrap_or(i32::MAX);
     let max = break_lines(&atoms, usize::MAX, false)
@@ -77,6 +84,16 @@ pub(super) fn intrinsic(run: &[&StyledNode], container: &ComputedStyle) -> Intri
         max
     };
     Intrinsic { min, max }
+}
+
+/// The atoms of `run`, and the absolutely positioned elements inside it.
+fn atoms<'a>(run: &[&'a StyledNode]) -> (Vec<Atom>, Vec<&'a StyledNode>) {
+    let mut atoms = Vec::new();
+    let mut absolute = Vec::new();
+    for node in run {
+        collect(node, None, &mut atoms, &mut absolute);
+    }
+    (atoms, absolute)
 }
 
 /// Flattens inline content into atoms. `background` comes from enclosing

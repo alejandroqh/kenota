@@ -4,6 +4,7 @@
 use std::ops::Add;
 
 use super::{Ctx, flex, inline, is_absolute, is_block_level, layout_box, marker, table};
+use crate::fonts::Fonts;
 use crate::style::{Display, Length, StyledNode};
 
 /// Border-box widths in cells.
@@ -58,29 +59,29 @@ impl Add for Intrinsic {
 }
 
 /// The intrinsic border-box widths of `node`.
-pub(super) fn intrinsic(node: &StyledNode) -> Intrinsic {
+pub(super) fn intrinsic(node: &StyledNode, fonts: &Fonts) -> Intrinsic {
     let style = &node.style;
     if let Some(Length::Cells(width)) = style.width {
         return Intrinsic::fixed(width.max(0));
     }
     if node.tag().is_none() {
-        return inline::intrinsic(&[node], style);
+        return inline::intrinsic(&[node], style, fonts);
     }
     if style.display == Display::Table {
-        return table::intrinsic(node);
+        return table::intrinsic(node, fonts);
     }
     let border = style.border.widths();
     let frame = style.padding.left + style.padding.right + border.left + border.right;
     let content = match style.display {
-        Display::Flex => flex::intrinsic(node),
+        Display::Flex => flex::intrinsic(node, fonts),
         _ if node.tag() == Some("hr") => Intrinsic::default(),
-        _ => flow(node),
+        _ => flow(node, fonts),
     };
     content + frame
 }
 
 /// Block flow: the widest child or line.
-fn flow(node: &StyledNode) -> Intrinsic {
+fn flow(node: &StyledNode, fonts: &Fonts) -> Intrinsic {
     let markers = marker::for_children(node);
     let mut result = Intrinsic::default();
     let mut run = Vec::new();
@@ -89,21 +90,21 @@ fn flow(node: &StyledNode) -> Intrinsic {
             continue;
         }
         if is_block_level(child) {
-            result = result.max(inline::intrinsic(&run, &node.style));
+            result = result.max(inline::intrinsic(&run, &node.style, fonts));
             run.clear();
             let margin = child.style.margin;
             let marker = marker.as_ref().map_or(0, |m| m.width);
-            result = result.max(intrinsic(child) + (margin.left + margin.right + marker));
+            result = result.max(intrinsic(child, fonts) + (margin.left + margin.right + marker));
         } else {
             run.push(child);
         }
     }
-    result.max(inline::intrinsic(&run, &node.style))
+    result.max(inline::intrinsic(&run, &node.style, fonts))
 }
 
 /// The border-box height `node` takes when laid out `width` wide.
-pub(super) fn height(node: &StyledNode, width: i32) -> i32 {
-    let mut scratch = Ctx::default();
+pub(super) fn height(node: &StyledNode, width: i32, fonts: &Fonts) -> i32 {
+    let mut scratch = Ctx::new(fonts);
     layout_box(node, 0, 0, width, None, None, &mut scratch).height
 }
 
@@ -121,7 +122,10 @@ mod tests {
     #[test]
     fn longest_word_and_whole_line() {
         let p = body_child("<p>a lengthy paragraph</p>");
-        assert_eq!(intrinsic(&p), Intrinsic { min: 9, max: 19 });
+        assert_eq!(
+            intrinsic(&p, &Fonts::bundled()),
+            Intrinsic { min: 9, max: 19 }
+        );
     }
 
     #[test]
@@ -130,7 +134,7 @@ mod tests {
             "<div style='padding: 0 2; border: single'><p>tiny</p><p style='margin-left: 3'>words here</p></div>",
         );
         assert_eq!(
-            intrinsic(&div),
+            intrinsic(&div, &Fonts::bundled()),
             Intrinsic {
                 min: 6 + 8,
                 max: 13 + 6
@@ -141,14 +145,14 @@ mod tests {
     #[test]
     fn fixed_width_wins() {
         let div = body_child("<div style='width: 12'>a very long line of text</div>");
-        assert_eq!(intrinsic(&div), Intrinsic::fixed(12));
+        assert_eq!(intrinsic(&div, &Fonts::bundled()), Intrinsic::fixed(12));
     }
 
     #[test]
     fn list_markers_count() {
         let ul = body_child("<ul><li>abc</li></ul>");
         assert_eq!(
-            intrinsic(&ul),
+            intrinsic(&ul, &Fonts::bundled()),
             Intrinsic {
                 min: 2 + 2 + 3,
                 max: 7

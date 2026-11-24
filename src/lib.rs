@@ -8,6 +8,8 @@
 pub mod app;
 pub mod chrome;
 pub mod deck;
+pub mod figlet;
+pub mod fonts;
 pub mod html;
 pub mod layout;
 pub mod palette;

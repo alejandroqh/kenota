@@ -156,6 +156,12 @@ fn style_element(
         .attr("style")
         .map(|css| parse::declarations(css, problems))
         .unwrap_or_default();
+    // `data-font="small"` works like `style="--font: small"`, which still beats it.
+    let font_hint = element.value().attr("data-font").map(|font| Declaration {
+        name: "--font".into(),
+        value: font.into(),
+        important: false,
+    });
 
     let mut matched: Vec<(Priority, &Declaration)> = Vec::new();
     let target = El(element);
@@ -168,6 +174,9 @@ fn style_element(
                 ));
             }
         }
+    }
+    if let Some(hint) = &font_hint {
+        matched.push(((false, Origin::Inline, [0; 3], usize::MAX - 1), hint));
     }
     for decl in &inline {
         matched.push(((decl.important, Origin::Inline, [0; 3], usize::MAX), decl));

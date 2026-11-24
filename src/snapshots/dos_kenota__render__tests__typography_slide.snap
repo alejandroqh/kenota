@@ -3,7 +3,10 @@ source: src/render.rs
 expression: "buffer_text(&single_slide_canvas(\"<style>body { background: blue } .box { background: lightgray; color: black; padding: 1 2; width: 40 }</style>\n             <h1>Text styles</h1>\n             <h2>Headings, <b>bold</b>, <em>emphasis</em> and <mark>highlights</mark></h2>\n             <p>Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy. Type <code>dir /w</code> at the prompt.\n                <u>Underline</u> and <s>strike</s> use terminal attributes.</p>\n             <p style='text-align: center'>Centered text</p>\n             <p style='text-align: right'>Right-aligned text</p>\n             <hr>\n             <div class='box'>A box with a background and padding.</div>\"))"
 ---
 
-  Text styles
+  ▀▀█▀▀              █              █         █
+    █   ▄▀▀▀▄ ▀▄ ▄▀ ▀█▀▀     ▄▀▀▀▀ ▀█▀▀ █   █ █ ▄▀▀▀▄ ▄▀▀▀▀
+    █   █▀▀▀▀  ▄▀▄   █        ▀▀▀▄  █   ▀▄▄▄█ █ █▀▀▀▀  ▀▀▀▄
+    ▀    ▀▀▀  ▀   ▀   ▀▀     ▀▀▀▀    ▀▀  ▄▄▄▀ ▀  ▀▀▀  ▀▀▀▀
 
   Headings, bold, emphasis and highlights
 
@@ -18,9 +21,6 @@ expression: "buffer_text(&single_slide_canvas(\"<style>body { background: blue }
 
 
     A box with a background and padding.
-
-
-
 
 
 
