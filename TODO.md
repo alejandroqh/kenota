@@ -233,17 +233,30 @@ Notes:
 
 ### 7. Authoring tools
 - [ ] Reload on save (`notify`)
-- [ ] `check <deck>`: unsupported tags/CSS, missing images, content past the canvas
-- [ ] `render <deck> --slide N`: print a slide as ANSI to stdout
+- [x] `check <deck>`: unsupported tags/CSS, missing images, content past the canvas
+- [x] `render <deck> --slide N`: print a slide as ANSI to stdout
 - [ ] Jump to slide by typing its number + Enter
 - [ ] Example deck recreating both MS Works screenshots
 - [x] Claude Code skill (`skills/dos-kenota`): Works style guide, every component, layout
-      balance, animation advice, a starter deck, and `preview.sh` to see a slide as text
-      or as color grids through tmux (until `render` exists)
+      balance, animation advice, a starter deck, and scripts around `render` and `check`
 
 Notes:
-- The skill's starter deck is loaded by `tests/demo_deck.rs` like the demo deck, so engine
-  changes that break it (warnings, slides too tall) fail the tests.
-- Things the skill documents as workarounds, worth fixing in the engine: warnings are
-  invisible (`check`), charts can't build bar by bar, and `data-build` on a table also
-  hides the header row.
+- Command line: `dos-kenota <deck>` presents; `render` and `check` are subcommands (clap
+  `args_conflicts_with_subcommands`, so a deck folder named `render` needs `./render`).
+- `render <deck> [--slide N] [--step N] [--time S] [--colors auto|truecolor|ansi16|none]`
+  (`src/ansi.rs`): the canvas footer included, one line per row, each colored line ending in
+  a reset; `none` is plain text with trailing spaces trimmed. Without `--slide`, every slide,
+  each under a `── n/N Title (file.html) ──` header. Without `--step`, the last step; a
+  bigger step is clamped. Without `--time`, `Clock::still` (typing done, effects at rest);
+  with it, the moment that long after the step appeared (slide time = step time).
+- `check <deck>` (`src/check.rs`): every slide warning, plus content outside the slide area,
+  found on the compiled display list so absolute boxes and shadows count; marquee text (longer
+  than its box on purpose) doesn't. Each edge is reported once, with the farthest row or
+  column and the first text found there. Prints `file: message` lines and a summary; exit
+  code 1 when there are problems. A bad `deck.toml` is an error, as when presenting.
+- Unsupported tags warn once per slide and kind (`src/html.rs`): `script`, `svg`/`canvas`,
+  media and embeds, form controls.
+- The skill's starter deck and the demo deck must pass `check` (`tests/demo_deck.rs`);
+  `tests/cli.rs` runs the binary.
+- Still worth fixing in the engine (the skill documents workarounds): charts can't build bar
+  by bar, and `data-build` on a table also hides the header row.

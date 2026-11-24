@@ -226,15 +226,18 @@ still. So a marquee box or a blinking prompt in a panel keeps its frame.
 ## Checking motion with the preview script
 
 ```bash
-scripts/preview.sh <deck> 4 --steps 0     # the slide as it first appears
-scripts/preview.sh <deck> 4 --steps 2     # after two PgDn presses
-scripts/preview.sh <deck> 2 --wait 0.5    # typewriter mid-way
-scripts/preview.sh <deck> 2 --wait 5      # typewriter finished
+scripts/preview.sh <deck> 4 --step 0              # the slide as it first appears
+scripts/preview.sh <deck> 4 --step 2              # after two PgDn presses
+scripts/preview.sh <deck> 2 --step 0 --time 0.5   # half a second in: the typewriter part-way
+scripts/preview.sh <deck> 2                       # finished: every step, typing done
 ```
 
-- Pressing PgDn past the last step goes to the next slide, which shows the
-  `n/N` in the footer change: a quick way to count a slide's steps.
-- A capture right after a slide change can catch the transition halfway; the
-  default 1 s wait is longer than every default transition.
-- Blinking text appears in some captures and not in others; marquee and
-  frames show a different moment each time.
+- `--time` is the time since the step appeared, so it drives that step's
+  typewriters. The slide's other effects (blink, marquee, rainbow, frames)
+  are shown at the same moment.
+- Without `--time`, the slide is at rest: typing finished, blinking text on,
+  marquees at their start, the first frame. Use a few `--time` values to see
+  a marquee move or frames change.
+- `--step` beyond the last step shows the finished slide. To count a slide's
+  steps, compare `--step N` outputs until they stop changing.
+- Transitions can't be previewed; they only play in the viewer.

@@ -67,8 +67,8 @@ pub fn compile(deck: &Deck, index: usize) -> Compiled {
     Compiled { list }
 }
 
-/// The canvas area above the footer.
-fn content_area(deck: &Deck) -> Rect {
+/// The slide area: the canvas above the footer.
+pub fn content_area(deck: &Deck) -> Rect {
     let size = deck.config.size;
     let footer_rows = if deck.config.footer { FOOTER_ROWS } else { 0 };
     Rect::new(0, 0, size.width, size.height - footer_rows)

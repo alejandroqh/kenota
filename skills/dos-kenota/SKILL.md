@@ -32,11 +32,16 @@ describes it in detail.
    balance*). Put the budget in a CSS comment, like the starter slides do, so
    later edits keep it.
 4. **Write the HTML**, using `references/components.md` for exact syntax.
-   Only the documented subset works; anything else is silently ignored.
-5. **Preview every slide** with `scripts/preview.sh` and fix what you see (next
-   section). Never hand over a deck you haven't looked at: wrapped lines,
-   boxes that run past the bottom and lopsided margins are invisible in the
-   HTML and obvious on screen.
+   Only the documented subset works; the viewer ignores anything else
+   silently.
+5. **Check, then look.**
+   - Run `scripts/check.sh <deck>` and fix every problem it lists: ignored
+     CSS, unsupported tags, missing pictures and fonts, bad transitions and
+     chart values, content off the slide area.
+   - Then preview every slide with `scripts/preview.sh` and fix what you see
+     (next section). `check` can't see a line that wrapped where you didn't
+     want it, or lopsided margins, so never hand over a deck you haven't
+     looked at.
 6. **Hand over** with the command to run it: `dos-kenota <deck>` (or
    `cargo run -- <deck>` inside the dos-kenota repository). Keys: PgDn/→/Space
    next step or slide, PgUp/← back, Home/End, q quits. `--slide N` starts at
@@ -44,36 +49,44 @@ describes it in detail.
 
 ## Seeing a slide
 
-You can't watch the interactive viewer, so `scripts/preview.sh` runs it in a
-hidden tmux window and prints the screen:
+You can't watch the interactive viewer, so `scripts/preview.sh` prints a
+slide through `dos-kenota render`:
 
 ```bash
-scripts/preview.sh <deck> 3                 # slide 3 as text
-scripts/preview.sh <deck> 3 --map           # numbered text grid + background and text colors
+scripts/preview.sh <deck> 3                 # slide 3, all steps showing, as a numbered text grid
+scripts/preview.sh <deck> 3 --map           # + background and foreground colors of every cell
 scripts/preview.sh <deck> 3 --grid bg --rows 5-12   # only the background colors of rows 5-12
-scripts/preview.sh <deck> 3 --steps 2       # after pressing PgDn twice (build steps)
-scripts/preview.sh <deck> 3 --wait 4        # give a typewriter time to finish
+scripts/preview.sh <deck> 3 --step 0        # how the slide first appears (before any PgDn)
+scripts/preview.sh <deck> 3 --step 2 --time 0.5     # half a second after step 2 appeared
 ```
 
-The plain view shows the 80×25 canvas inside tmux's border (the footer is the
-last two rows). `--map` crops the border and labels rows and columns, so the
-numbers are the same as CSS `top`/`left`. Then it prints the background and
-foreground color of every cell as an EGA number in hex (1 blue, 7 lightgray,
-f white…). Use it to check colors and exact positions. `--grid text|bg|fg`
-prints only some grids, and `--rows` only some rows. In the plain view a grey
-panel, a black screen and a brown desk all look like blank space, so use
-`--grid bg` on every picture scene. Check each slide for:
+- **Numbers:** rows and columns are canvas cells, the same numbers as CSS
+  `top`/`left`. The footer is rows 23–24.
+- **Colors:** `--map` and `--grid bg|fg` print each cell's color as an EGA
+  number in hex (1 blue, 7 lightgray, f white…). In the text grid, a grey
+  panel, a black screen and a brown desk all look like blank space, so use
+  `--grid bg` on every picture scene.
+- **Moments:**
+  - without `--step`, every step shows;
+  - without `--time`, typing has finished and the other effects are at rest:
+    blinking text on, marquees at the start, the first frame;
+  - so the same command always gives the same picture.
+
+The engine also runs directly: `dos-kenota render <deck> [--slide N]
+[--step N] [--time S] [--colors none|truecolor|ansi16]` prints slides (every
+slide when `--slide` is left out), and `dos-kenota check <deck>` lists
+problems. Check each slide for:
 
 - text that wrapped where you didn't want it (a box narrower than you thought);
 - anything cut off at the bottom: the slide area ends at row 22 when the footer is on;
 - margins that differ left and right once shadows are counted;
-- blinking text missing because the capture caught its "off" phase (capture again);
-- each build step with `--steps` (step 1, 2, …), and the slide's final state.
-  Pressing PgDn past the last step moves to the next slide (the `n/N` in the
-  footer changes), which tells you how many steps a slide has.
+- each build step (`--step 0`, `1`, …) as well as the finished slide; a
+  `--step` past the last one shows the finished slide;
+- typewriters part-way (`--time`), to see that the order of appearance makes
+  sense.
 
-The script needs tmux. It finds the engine through `$DOS_KENOTA`, then the
-repository this skill lives in (building it with cargo), then `PATH`.
+The scripts find the engine with `scripts/engine.sh`: `$DOS_KENOTA`, then
+the repository this skill lives in (building it with cargo), then `PATH`.
 
 ## The Works look in brief
 
@@ -216,10 +229,9 @@ These came up in practice:
   placed after an explicit `data-step="3"` starts at step 4. To sync a
   picture with a list, number every element with `data-step="N"` instead
   of `data-build`.
-- **Silent failures:** unknown CSS, unknown fonts and bad values are
-  collected as warnings but not shown in the viewer (there is no `check`
-  command yet), so the preview is the only check. A property that seems to do
-  nothing is probably unsupported: look it up in `references/components.md`.
+- **Silent in the viewer, loud in `check`:** the viewer ignores unknown CSS,
+  unknown fonts and bad values without a word; `scripts/check.sh` lists them.
+  Run it after every round of edits.
 - **Colors:** use the 16 EGA names: black, blue, green, cyan, red, magenta,
   brown, lightgray, darkgray, lightblue, lightgreen, lightcyan, lightred,
   lightmagenta, yellow, white. Other CSS colors snap to the nearest one,
@@ -244,5 +256,7 @@ These came up in practice:
   - a picture scene with narration and typewriter;
   - a gallery of 8 cards;
   - a chart with a build list.
-- `scripts/preview.sh`: shows a slide as text or as color grids (needs
-  tmux). `scripts/colormap.py` is its color decoder.
+- `scripts/preview.sh`: shows a slide as a numbered text grid or as color
+  grids; `scripts/check.sh` lists a deck's problems; `scripts/engine.sh`
+  finds or builds the engine; `scripts/colormap.py` turns colored output
+  into grids.

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Reads a colored screen capture of a dos-kenota slide (tmux capture-pane -e)
-on stdin and prints grids with row and column numbers: the text, the
-background color of every cell, and the foreground color of every cell.
+"""Reads a colored dos-kenota slide on stdin (`dos-kenota render --colors
+truecolor`, or a terminal capture such as `tmux capture-pane -e`) and prints
+grids with row and column numbers: the text, the background color of every
+cell, and the foreground color of every cell.
 
     colormap.py [--grid text,bg,fg] [--rows FIRST-LAST]
 
@@ -18,9 +19,10 @@ Colors are EGA numbers in hex, so each cell stays one character wide:
 Blinking text is missing from a capture taken in its "off" phase; capture
 again to see it.
 
-The border tmux draws around the 80-column canvas is cropped away, so row and
-column numbers are canvas cells: the same numbers as CSS `top` and `left`
-(row 0 is the first row, and the footer is rows 23 and 24 on an 80×25 deck).
+Row and column numbers are canvas cells: the same numbers as CSS `top` and
+`left` (row 0 is the first row, and the footer is rows 23 and 24 on an 80×25
+deck). The border the viewer draws around the canvas in a terminal capture is
+cropped away.
 """
 
 import argparse

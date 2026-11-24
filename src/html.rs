@@ -1,6 +1,6 @@
 //! Slide HTML parsing: the title, and the styled element tree.
 
-use scraper::{Html, Selector};
+use scraper::{ElementRef, Html, Selector};
 
 use crate::anim::{self, Timeline};
 use crate::style::{self, StyledNode};
@@ -45,6 +45,7 @@ pub fn parse(source: &str, deck_css: Option<&str>) -> ParsedSlide {
         .map(|content| content.trim().to_string());
 
     let mut warnings = Vec::new();
+    unsupported_tags(&doc, &mut warnings);
     let mut root = style::build(&doc, deck_css, &mut warnings);
     let timeline = anim::prepare(&mut root, &mut warnings);
     ParsedSlide {
@@ -56,9 +57,51 @@ pub fn parse(source: &str, deck_css: Option<&str>) -> ParsedSlide {
     }
 }
 
+/// Warns once per kind of element the engine can't show: scripts, media,
+/// vector graphics and form controls.
+fn unsupported_tags(doc: &Html, warnings: &mut Vec<String>) {
+    let mut seen: Vec<&str> = Vec::new();
+    for element in doc
+        .root_element()
+        .descendants()
+        .filter_map(ElementRef::wrap)
+    {
+        let name = element.value().name();
+        let hint = match name {
+            "script" => "slides have no JavaScript",
+            "svg" | "canvas" => "draw with <img> (PNG or GIF) or block characters instead",
+            "video" | "audio" | "iframe" | "object" | "embed" => "only its fallback text shows",
+            "input" | "button" | "select" | "textarea" => {
+                "slides are not interactive; show a control with <kbd> or a styled box"
+            }
+            _ => continue,
+        };
+        if !seen.contains(&name) {
+            seen.push(name);
+            warnings.push(format!("<{name}> is not supported: {hint}"));
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unsupported_tags_warn_once_each() {
+        let slide = parse(
+            "<p>x</p><svg></svg><svg></svg><script>go()</script><button>OK</button>",
+            None,
+        );
+        assert_eq!(
+            slide.warnings,
+            [
+                "<svg> is not supported: draw with <img> (PNG or GIF) or block characters instead",
+                "<script> is not supported: slides have no JavaScript",
+                "<button> is not supported: slides are not interactive; show a control with <kbd> or a styled box",
+            ]
+        );
+    }
 
     #[test]
     fn title_is_collapsed_and_optional() {

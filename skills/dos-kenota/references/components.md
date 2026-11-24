@@ -1,7 +1,8 @@
 # dos-kenota components and syntax
 
 Everything the engine understands, and ready-made pieces in the Works style.
-Anything not listed here is ignored without an error, so stick to this list.
+The viewer ignores anything not listed here without a word, and
+`dos-kenota check` (`scripts/check.sh`) reports it, so stick to this list.
 
 Contents:
 1. Deck folder and deck.toml
