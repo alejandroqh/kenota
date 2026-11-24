@@ -13,7 +13,7 @@ use ratatui::style::Style;
 use super::border::{horizontal, junction, vertical};
 use super::measure::{self, Intrinsic};
 use super::{Area, Ctx, Item, block, distribute, layout_box};
-use crate::fonts::Fonts;
+use crate::assets::Assets;
 use crate::style::{BorderStyle, StyledNode};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -138,11 +138,11 @@ impl<'a> Grid<'a> {
         2 * self.frame_width() + inner
     }
 
-    fn column_intrinsics(&self, fonts: &Fonts) -> Vec<Intrinsic> {
+    fn column_intrinsics(&self, assets: &Assets) -> Vec<Intrinsic> {
         let mut columns = vec![Intrinsic::default(); self.columns];
         for row in &self.rows {
             for (column, cell) in columns.iter_mut().zip(&row.cells) {
-                *column = column.max(measure::intrinsic(cell, fonts));
+                *column = column.max(measure::intrinsic(cell, assets));
             }
         }
         columns
@@ -150,8 +150,8 @@ impl<'a> Grid<'a> {
 
     /// Column widths filling `available` cells (between the lines).
     #[allow(clippy::cast_precision_loss)]
-    fn column_widths(&self, available: i32, fonts: &Fonts) -> Vec<i32> {
-        let columns = self.column_intrinsics(fonts);
+    fn column_widths(&self, available: i32, assets: &Assets) -> Vec<i32> {
+        let columns = self.column_intrinsics(assets);
         let max: i32 = columns.iter().map(|c| c.max).sum();
         let min: i32 = columns.iter().map(|c| c.min).sum();
         let (base, weights): (Vec<i32>, Vec<f32>) = if max <= available {
@@ -173,17 +173,17 @@ impl<'a> Grid<'a> {
 }
 
 /// The narrowest and widest `table` can be.
-pub(super) fn intrinsic(table: &StyledNode, fonts: &Fonts) -> Intrinsic {
+pub(super) fn intrinsic(table: &StyledNode, assets: &Assets) -> Intrinsic {
     let grid = Grid::new(table);
     let columns = grid
-        .column_intrinsics(fonts)
+        .column_intrinsics(assets)
         .into_iter()
         .fold(Intrinsic::default(), |sum, column| sum + column);
     let mut result = columns + grid.overhead();
     if let Some(caption) = grid.caption {
         // A caption wraps rather than widening the table, down to its longest word.
         let margin = caption.style.margin;
-        let caption_min = measure::intrinsic(caption, fonts).min + margin.left + margin.right;
+        let caption_min = measure::intrinsic(caption, assets).min + margin.left + margin.right;
         result = result.max(Intrinsic::fixed(caption_min));
     }
     result
@@ -209,7 +209,7 @@ pub(super) fn layout<'a>(
         return cursor - y;
     }
 
-    let widths = grid.column_widths(width - grid.overhead(), ctx.fonts);
+    let widths = grid.column_widths(width - grid.overhead(), ctx.assets);
     let frame = grid.frame_width();
     // Vertical lines (column and style) and where each column's cells start.
     let mut lines = Vec::new();
@@ -267,7 +267,7 @@ pub(super) fn layout<'a>(
             .cells
             .iter()
             .zip(&widths)
-            .map(|(cell, &width)| measure::height(cell, width, ctx.fonts))
+            .map(|(cell, &width)| measure::height(cell, width, ctx.assets))
             .max()
             .unwrap_or(0)
             .max(1);

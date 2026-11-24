@@ -21,6 +21,7 @@ td, th { padding: 0 1; }
 th { text-align: center; }
 
 li { display: list-item; }
+img { display: block; }
 
 body {
   color: lightgray;

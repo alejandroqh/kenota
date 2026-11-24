@@ -16,7 +16,7 @@ fn demo_deck_has_no_warnings_and_fits() {
     for slide in &deck.slides {
         let name = slide.path.display();
         assert!(slide.warnings.is_empty(), "{name}: {:?}", slide.warnings);
-        let height = layout::layout(&slide.root, content, &deck.fonts).height;
+        let height = layout::layout(&slide.root, content, &deck.assets).height;
         assert!(
             height <= i32::from(content.height),
             "{name} is {height} rows tall; only {} fit",

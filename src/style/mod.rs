@@ -131,6 +131,9 @@ pub struct ComputedStyle {
     pub list_style_type: ListStyleType,
     /// `--font`: the FIGlet font for big text, by name. `None` is ordinary text.
     pub font: Option<String>,
+    /// `--dither: ordered`: pictures mix colors in a fine pattern to show
+    /// shades the 16 colors lack.
+    pub dither: bool,
 
     // Not inherited.
     pub display: Display,
@@ -182,6 +185,7 @@ impl ComputedStyle {
             text_transform: TextTransform::None,
             list_style_type: ListStyleType::Disc,
             font: None,
+            dither: false,
             display: Display::Inline,
             background: None,
             margin: Edges::default(),
@@ -215,6 +219,7 @@ impl ComputedStyle {
             text_transform: self.text_transform,
             list_style_type: self.list_style_type.clone(),
             font: self.font.clone(),
+            dither: self.dither,
             ..Self::root()
         }
     }
@@ -290,6 +295,10 @@ impl ComputedStyle {
             "box-shadow" => self.shadow = values::shadow(value).ok_or(invalid)?,
             "--fill" => self.pattern = values::pattern(value).ok_or(invalid)?,
             "--font" => self.font = values::font(value).ok_or(invalid)?,
+            "--dither" => {
+                self.dither =
+                    keyword(value, &[("ordered", true), ("none", false)]).ok_or(invalid)?;
+            }
             "position" => {
                 self.position = keyword(
                     value,

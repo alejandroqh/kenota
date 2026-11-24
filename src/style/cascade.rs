@@ -60,6 +60,8 @@ impl StyledNode {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum Origin {
     Default,
+    /// HTML attributes that stand for CSS, like `<img width="20">`.
+    Hint,
     Deck,
     Slide,
     Inline,
@@ -162,8 +164,28 @@ fn style_element(
         value: font.into(),
         important: false,
     });
+    // `width` and `height` attributes on pictures and tables, in cells.
+    // Like in browsers, any CSS rule overrides them.
+    let size_hints: Vec<Declaration> = if matches!(element.value().name(), "img" | "table") {
+        ["width", "height"]
+            .into_iter()
+            .filter_map(|name| {
+                let value = element.value().attr(name)?;
+                Some(Declaration {
+                    name: name.into(),
+                    value: value.into(),
+                    important: false,
+                })
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
 
-    let mut matched: Vec<(Priority, &Declaration)> = Vec::new();
+    let mut matched: Vec<(Priority, &Declaration)> = size_hints
+        .iter()
+        .map(|hint| ((false, Origin::Hint, [0; 3], 0), hint))
+        .collect();
     let target = El(element);
     for rule in rules {
         if rule.selector.matches(&target) {
@@ -265,7 +287,7 @@ impl simplecss::Element for El<'_> {
 mod tests {
     use super::*;
     use crate::palette::Ega;
-    use crate::style::{ListStyleType, WhiteSpace};
+    use crate::style::{Length, ListStyleType, WhiteSpace};
 
     fn styled(html: &str, deck_css: Option<&str>) -> (StyledNode, Vec<String>) {
         let mut warnings = Vec::new();
@@ -275,6 +297,32 @@ mod tests {
 
     fn color_of(root: &StyledNode, tag: &str) -> Ega {
         root.find(tag).unwrap().style.color
+    }
+
+    #[test]
+    fn size_attributes_are_hints() {
+        let (root, warnings) = styled(
+            "<style>.wide { width: 30 }</style>
+             <img src='a.png' width='12' height='5'>
+             <img class='wide' src='b.png' width='12'>
+             <p width='9'>not a picture</p>",
+            None,
+        );
+        assert!(warnings.is_empty(), "{warnings:?}");
+        let body = root.find("body").unwrap();
+        let images: Vec<&StyledNode> = body
+            .children
+            .iter()
+            .filter(|c| c.tag() == Some("img"))
+            .collect();
+        assert_eq!(images[0].style.width, Some(Length::Cells(12)));
+        assert_eq!(images[0].style.height, Some(5));
+        assert_eq!(
+            images[1].style.width,
+            Some(Length::Cells(30)),
+            "CSS beats the attribute"
+        );
+        assert_eq!(body.find("p").unwrap().style.width, None);
     }
 
     #[test]

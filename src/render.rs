@@ -51,7 +51,7 @@ pub fn slide_canvas(deck: &Deck, index: usize) -> Buffer {
             color,
         });
     }
-    items.extend(layout::layout(&slide.root, content, &deck.fonts).items);
+    items.extend(layout::layout(&slide.root, content, &deck.assets).items);
     paint(&items, &mut buf, content);
 
     if footer_rows > 0 {

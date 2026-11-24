@@ -7,7 +7,7 @@ use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use super::measure::Intrinsic;
 use super::{Item, bigtext, is_absolute, text_style};
-use crate::fonts::Fonts;
+use crate::assets::Assets;
 use crate::palette::Ega;
 use crate::style::{ComputedStyle, Content, StyledNode, TextAlign, TextTransform};
 
@@ -30,14 +30,14 @@ type Line = Vec<(String, Style)>;
 pub(super) fn layout<'a>(
     run: &[&'a StyledNode],
     container: &ComputedStyle,
-    fonts: &Fonts,
+    assets: &Assets,
     x: i32,
     y: i32,
     width: i32,
     out: &mut Vec<Item>,
 ) -> (i32, Vec<&'a StyledNode>) {
     let (atoms, absolute) = atoms(run);
-    if let Some(font) = bigtext::font(container, fonts) {
+    if let Some(font) = bigtext::font(container, &assets.fonts) {
         let rows = bigtext::layout(&atoms, font, container.text_align, x, y, width, out);
         return (rows, absolute);
     }
@@ -58,10 +58,10 @@ pub(super) fn layout<'a>(
 pub(super) fn intrinsic(
     run: &[&StyledNode],
     container: &ComputedStyle,
-    fonts: &Fonts,
+    assets: &Assets,
 ) -> Intrinsic {
     let (atoms, _) = atoms(run);
-    if let Some(font) = bigtext::font(container, fonts) {
+    if let Some(font) = bigtext::font(container, &assets.fonts) {
         return bigtext::intrinsic(&atoms, font);
     }
     let width = |text: &str| i32::try_from(text.width()).unwrap_or(i32::MAX);

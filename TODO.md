@@ -171,9 +171,19 @@ Notes:
   and leaves blank cells untouched so fills show between letters.
 
 ### 5. Pixel canvas
-- [ ] Half-block pixel canvas shared by images and charts
-- [ ] `<img>`: decode, scale, quantize to EGA, ordered dithering
+- [x] Half-block pixel canvas shared by images and charts
+- [x] `<img>`: decode, scale, quantize to EGA, ordered dithering
 - [ ] Charts: bar, stacked, stacked100, line, area, hilo, pie, xy
+
+Notes:
+- `src/pixels.rs`: two pixels per cell (`▀▄█`), transparent pixels keep what is behind.
+- `src/images.rs`: PNG and GIF (first frame) via the `image` crate, loaded once per deck and
+  shrunk to at most 200 pixels a side. Drawing averages source pixels, snaps to the nearest
+  EGA color, and with `--dither: ordered` (inherited) uses a 4×4 Bayer matrix.
+- `<img>` is a block. `width`/`height` attributes (and CSS) are cells; with one of them the
+  picture keeps its shape, with neither it is one pixel per pixel, shrunk to fit.
+  `margin: 0 auto` centers it. Missing pictures show `[alt]` and a slide warning.
+- Fonts and pictures travel together as `Assets` (`deck.assets`), passed to layout.
 
 ### 6. Animations
 - [ ] Builds (`data-step`, `data-build`), PgDn/PgUp through steps

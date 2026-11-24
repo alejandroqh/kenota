@@ -6,12 +6,15 @@
 //! canvas is then shown centered in the terminal with a footer bar.
 
 pub mod app;
+pub mod assets;
 pub mod chrome;
 pub mod deck;
 pub mod figlet;
 pub mod fonts;
 pub mod html;
+pub mod images;
 pub mod layout;
 pub mod palette;
+pub mod pixels;
 pub mod render;
 pub mod style;

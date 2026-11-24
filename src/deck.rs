@@ -10,8 +10,10 @@ use std::str::Chars;
 use color_eyre::eyre::{Result, WrapErr, bail, eyre};
 use serde::Deserialize;
 
+use crate::assets::Assets;
 use crate::fonts::Fonts;
 use crate::html;
+use crate::images::Images;
 use crate::palette::Ega;
 use crate::style::StyledNode;
 
@@ -23,8 +25,8 @@ pub const STYLESHEET_FILE: &str = "style.css";
 pub struct Deck {
     pub root: PathBuf,
     pub config: DeckConfig,
-    /// Bundled fonts plus the deck's own `.flf` files.
-    pub fonts: Fonts,
+    /// Fonts (bundled plus the deck's own `.flf` files) and the slides' pictures.
+    pub assets: Assets,
     /// Never empty.
     pub slides: Vec<Slide>,
 }
@@ -37,7 +39,7 @@ pub struct Slide {
     /// The styled `<html>` element.
     pub root: StyledNode,
     /// Problems found in this slide and the deck stylesheet: CSS that
-    /// was ignored, fonts that do not exist.
+    /// was ignored, fonts that do not exist, pictures that cannot be shown.
     pub warnings: Vec<String>,
 }
 
@@ -155,7 +157,7 @@ impl Deck {
             natural_cmp(&a, &b).then_with(|| a.cmp(&b))
         });
 
-        let slides = paths
+        let mut slides = paths
             .into_iter()
             .map(|path| {
                 let source = fs::read_to_string(&path)
@@ -164,10 +166,15 @@ impl Deck {
             })
             .collect::<Result<Vec<_>>>()?;
 
+        let mut images = Images::default();
+        for slide in &mut slides {
+            images.load_for(&slide.root, root, &mut slide.warnings);
+        }
+
         Ok(Deck {
             root: root.to_path_buf(),
             config,
-            fonts,
+            assets: Assets { fonts, images },
             slides,
         })
     }
@@ -284,7 +291,7 @@ pub(crate) fn test_deck(titles: &[&str]) -> Deck {
     Deck {
         root: PathBuf::from("test-deck"),
         config: DeckConfig::default(),
-        fonts: Fonts::bundled(),
+        assets: Assets::default(),
         slides: titles.iter().map(|title| test_slide(title, "")).collect(),
     }
 }
@@ -380,7 +387,7 @@ mod tests {
         }
         let dir = deck_dir(&[("tiny.flf", &font), ("a.html", "<p data-font='tiny'>x</p>")]);
         let deck = Deck::load(dir.path()).unwrap();
-        assert!(deck.fonts.get("tiny").is_some());
+        assert!(deck.assets.fonts.get("tiny").is_some());
         assert!(
             deck.slides[0].warnings.is_empty(),
             "{:?}",

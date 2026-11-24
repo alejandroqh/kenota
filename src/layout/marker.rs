@@ -135,7 +135,7 @@ mod tests {
         let area = Rect::new(0, 0, width, height);
         let mut buf = Buffer::empty(area);
         paint(
-            &layout(&slide.root, area, &crate::fonts::Fonts::bundled()).items,
+            &layout(&slide.root, area, &crate::assets::Assets::default()).items,
             &mut buf,
             area,
         );

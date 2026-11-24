@@ -14,6 +14,7 @@ mod flex;
 mod inline;
 mod marker;
 mod measure;
+mod picture;
 mod table;
 
 use std::mem;
@@ -21,7 +22,7 @@ use std::mem;
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
 
-use crate::fonts::Fonts;
+use crate::assets::Assets;
 use crate::palette::Ega;
 use crate::style::{ComputedStyle, Display, Length, Position, StyledNode};
 use marker::Marker;
@@ -71,11 +72,11 @@ pub struct DisplayList {
     pub height: i32,
 }
 
-/// Lays out `root` (normally the `<html>` element) inside `area`. Big
-/// text looks its fonts up in `fonts`.
-pub fn layout(root: &StyledNode, area: Rect, fonts: &Fonts) -> DisplayList {
+/// Lays out `root` (normally the `<html>` element) inside `area`. Fonts
+/// and pictures come from `assets`.
+pub fn layout(root: &StyledNode, area: Rect, assets: &Assets) -> DisplayList {
     let area = Area::from(area);
-    let mut ctx = Ctx::new(fonts);
+    let mut ctx = Ctx::new(assets);
     let size = block(
         root,
         area.x,
@@ -234,7 +235,7 @@ struct Pending<'a> {
 }
 
 struct Ctx<'a> {
-    fonts: &'a Fonts,
+    assets: &'a Assets,
     /// The layer new items go to.
     layer: Layer,
     /// Absolutely positioned boxes found since the nearest positioned ancestor.
@@ -242,9 +243,9 @@ struct Ctx<'a> {
 }
 
 impl<'a> Ctx<'a> {
-    fn new(fonts: &'a Fonts) -> Self {
+    fn new(assets: &'a Assets) -> Self {
         Self {
-            fonts,
+            assets,
             layer: Layer::default(),
             pending: Vec::new(),
         }
@@ -268,19 +269,22 @@ fn block<'a>(
     marker: Option<&Marker>,
     ctx: &mut Ctx<'a>,
 ) -> BlockSize {
-    let (offset, box_width) = horizontal(node, width, ctx.fonts);
+    let (offset, box_width) = horizontal(node, width, ctx.assets);
     layout_box(node, x + offset, y, box_width, None, marker, ctx)
 }
 
 /// Where an in-flow block starts inside a container `width` wide, and how
 /// wide its border box is. Tables shrink to fit; `auto` margins center.
-fn horizontal(node: &StyledNode, width: i32, fonts: &Fonts) -> (i32, i32) {
+fn horizontal(node: &StyledNode, width: i32, assets: &Assets) -> (i32, i32) {
     let style = &node.style;
     let margin = style.margin;
     let available = width - margin.left - margin.right;
     let box_width = match style.width {
         Some(w) => w.resolve(width),
-        None if style.display == Display::Table => measure::intrinsic(node, fonts).fit(available),
+        // Tables and pictures are as wide as their content, not their container.
+        None if style.display == Display::Table || node.tag() == Some("img") => {
+            measure::intrinsic(node, assets).fit(available)
+        }
         None => available,
     }
     .max(0);
@@ -411,6 +415,11 @@ fn content_box<'a>(
             let row = flex::layout(node, content_x, content_y, content_width, inner, ctx);
             (row, 0)
         }
+        _ if node.tag() == Some("img") => {
+            let inner = fixed_height.map(|h| h - top - bottom);
+            let rows = picture::layout(node, content_x, content_y, content_width, inner, ctx);
+            (rows, 0)
+        }
         _ if node.tag() == Some("hr") => {
             ctx.layer.items.push(Item::Text {
                 x: content_x,
@@ -507,7 +516,7 @@ fn flow<'a>(node: &'a StyledNode, x: i32, y: i32, width: i32, ctx: &mut Ctx<'a>)
             let (lines, absolute) = inline::layout(
                 run,
                 &node.style,
-                ctx.fonts,
+                ctx.assets,
                 x,
                 top,
                 width,
@@ -573,7 +582,7 @@ fn absolute<'a>(pending: &Pending<'a>, containing: Area, ctx: &mut Ctx<'a>) {
     let width = match style.width {
         Some(w) => w.resolve(containing.width),
         None if left.is_some() && right.is_some() => available,
-        None => measure::intrinsic(node, ctx.fonts).fit(available),
+        None => measure::intrinsic(node, ctx.assets).fit(available),
     }
     .max(0);
     let x = match (left, right) {
@@ -591,7 +600,7 @@ fn absolute<'a>(pending: &Pending<'a>, containing: Area, ctx: &mut Ctx<'a>) {
     let y = match (top, bottom) {
         (Some(top), _) => containing.y + top + margin.top,
         (None, Some(bottom)) => {
-            containing.bottom() - bottom - margin.bottom - measure::height(node, width, ctx.fonts)
+            containing.bottom() - bottom - margin.bottom - measure::height(node, width, ctx.assets)
         }
         (None, None) => pending.y + margin.top,
     };
@@ -657,17 +666,33 @@ mod tests {
 
     /// Renders `html` on a `width`×`height` canvas without the default body margin.
     fn render(html: &str, width: u16, height: u16) -> Buffer {
+        render_with(html, width, height, &Assets::default())
+    }
+
+    fn render_with(html: &str, width: u16, height: u16, assets: &Assets) -> Buffer {
         let source = format!("<style>body {{ margin: 0 }}</style>{html}");
         let slide = html::parse(&source, None);
         assert!(slide.warnings.is_empty(), "{:?}", slide.warnings);
         let area = Rect::new(0, 0, width, height);
         let mut buf = Buffer::empty(area);
-        paint(
-            &layout(&slide.root, area, &Fonts::bundled()).items,
-            &mut buf,
-            area,
-        );
+        paint(&layout(&slide.root, area, assets).items, &mut buf, area);
         buf
+    }
+
+    /// Assets with `pic.png`: `width`×`height` pixels, red on even rows and
+    /// blue on odd rows, transparent in the last column.
+    fn striped(width: u32, height: u32) -> Assets {
+        use image::{Rgba, RgbaImage};
+        let image = RgbaImage::from_fn(width, height, |x, y| match (x + 1 == width, y % 2) {
+            (true, _) => Rgba([0; 4]),
+            (false, 0) => Rgba([170, 0, 0, 255]),
+            (false, _) => Rgba([0, 0, 170, 255]),
+        });
+        let mut assets = Assets::default();
+        assets
+            .images
+            .insert("pic.png", crate::images::Picture::new(image).unwrap());
+        assets
     }
 
     fn text(html: &str, width: u16, height: u16) -> String {
@@ -922,7 +947,7 @@ mod tests {
         assert_eq!(text(html, 12, 4), "flow\n    ┌───┐\nafte│abs│\n    └───┘");
         let slide = html::parse(&format!("<style>body {{ margin: 0 }}</style>{html}"), None);
         assert_eq!(
-            layout(&slide.root, Rect::new(0, 0, 12, 4), &Fonts::bundled()).height,
+            layout(&slide.root, Rect::new(0, 0, 12, 4), &Assets::default()).height,
             3,
             "only the flow counts"
         );
@@ -1103,9 +1128,109 @@ mod tests {
     }
 
     #[test]
+    fn picture_keeps_its_shape() {
+        let assets = striped(5, 2);
+        let buf = render_with("<img src='pic.png' width='5'><p>after</p>", 12, 2, &assets);
+        assert_eq!(buffer_text(&buf), "▀▀▀▀\nafter");
+        assert_eq!(buf[(0, 0)].fg, Ega::Red.color());
+        assert_eq!(buf[(0, 0)].bg, Ega::Blue.color());
+        assert_eq!(
+            buf[(4, 0)].symbol(),
+            " ",
+            "the transparent column draws nothing"
+        );
+
+        let buf = render_with("<img src='pic.png' width='10'>", 12, 2, &assets);
+        assert_eq!(
+            buffer_text(&buf),
+            "████████\n████████",
+            "each stripe is now two pixels"
+        );
+        assert_eq!(buf[(0, 1)].fg, Ega::Blue.color());
+    }
+
+    #[test]
+    fn picture_sizes() {
+        let assets = striped(5, 2);
+        let size = |html: &str| {
+            let text = buffer_text(&render_with(html, 12, 6, &assets));
+            let rows: Vec<&str> = text.lines().filter(|l| !l.is_empty()).collect();
+            (rows.first().map_or(0, |r| r.chars().count()), rows.len())
+        };
+        assert_eq!(
+            size("<img src='pic.png'>"),
+            (4, 1),
+            "natural size, one pixel per pixel"
+        );
+        assert_eq!(
+            size("<img src='pic.png' height='2'>"),
+            (8, 2),
+            "width follows the height"
+        );
+        assert_eq!(
+            size("<img src='pic.png' width='5' height='3'>"),
+            (4, 3),
+            "both set: stretched"
+        );
+        assert_eq!(
+            size("<img src='pic.png' style='width: 50%'>"),
+            (5, 2),
+            "percent of the container"
+        );
+    }
+
+    #[test]
+    fn big_pictures_shrink_to_the_container() {
+        let assets = striped(41, 8);
+        let text = buffer_text(&render_with("<img src='pic.png'>", 10, 6, &assets));
+        let first = text.lines().next().unwrap();
+        assert_eq!(
+            first.chars().count(),
+            10,
+            "the transparent column blends into the last one"
+        );
+        assert_eq!(
+            text.lines().filter(|l| !l.is_empty()).count(),
+            1,
+            "41×8 pixels at 10 wide is 2 pixels tall"
+        );
+    }
+
+    #[test]
+    fn pictures_center_with_auto_margins() {
+        let assets = striped(5, 2);
+        let buf = render_with("<img src='pic.png' style='margin: 0 auto'>", 11, 1, &assets);
+        assert_eq!(buffer_text(&buf), "   ▀▀▀▀");
+    }
+
+    #[test]
+    fn missing_pictures_show_alt_text() {
+        assert_eq!(
+            text(
+                "<img src='shop.png' alt='The shop'><img src='x.gif'>",
+                20,
+                2
+            ),
+            "[The shop]\n[x.gif]"
+        );
+    }
+
+    #[test]
+    fn pictures_in_a_flex_row() {
+        let assets = striped(3, 2);
+        let buf = render_with(
+            "<div style='display: flex; gap: 1'><img src='pic.png'><span>text</span></div>",
+            12,
+            1,
+            &assets,
+        );
+        assert_eq!(buffer_text(&buf), "▀▀  text");
+    }
+
+    #[test]
     fn display_list_reports_overflow_height() {
         let slide = html::parse("<style>body{margin:0}</style><p>a</p><p>b</p>", None);
-        let list = layout(&slide.root, Rect::new(0, 0, 10, 2), &Fonts::bundled());
+        let list = layout(&slide.root, Rect::new(0, 0, 10, 2), &Assets::default());
         assert_eq!(
             list.height, 3,
             "two paragraphs and the margin between, past the 2-row area"

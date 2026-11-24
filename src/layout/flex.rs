@@ -11,7 +11,7 @@
 
 use super::measure::{self, Intrinsic};
 use super::{Ctx, Pending, distribute, inline, is_absolute, layout_box};
-use crate::fonts::Fonts;
+use crate::assets::Assets;
 use crate::style::{Align, Content, Justify, StyledNode};
 
 /// Lays out the children of `node` in a row starting at (`x`, `y`),
@@ -38,7 +38,7 @@ pub(super) fn layout<'a>(
         return height.unwrap_or(0);
     }
 
-    let widths = widths(&items, width, style.gap, ctx.fonts);
+    let widths = widths(&items, width, style.gap, ctx.assets);
     let used: i32 = widths.iter().sum::<i32>()
         + items.iter().map(|item| margin_x(item)).sum::<i32>()
         + style.gap * gaps(items.len());
@@ -48,7 +48,7 @@ pub(super) fn layout<'a>(
     let heights: Vec<i32> = items
         .iter()
         .zip(&widths)
-        .map(|(item, &width)| outer_height(item, width, ctx.fonts))
+        .map(|(item, &width)| outer_height(item, width, ctx.assets))
         .collect();
     let row = height.unwrap_or_else(|| heights.iter().copied().max().unwrap_or(0));
 
@@ -66,7 +66,7 @@ pub(super) fn layout<'a>(
             inline::layout(
                 &[*item],
                 &item.style,
-                ctx.fonts,
+                ctx.assets,
                 item_x,
                 y + offset,
                 widths[i],
@@ -100,14 +100,14 @@ pub(super) fn layout<'a>(
 }
 
 /// The narrowest and widest the row's content can be.
-pub(super) fn intrinsic(node: &StyledNode, fonts: &Fonts) -> Intrinsic {
+pub(super) fn intrinsic(node: &StyledNode, assets: &Assets) -> Intrinsic {
     let items: Vec<&StyledNode> = node
         .children
         .iter()
         .filter(|child| !is_absolute(child) && is_item(child))
         .collect();
     let content = items.iter().fold(Intrinsic::default(), |sum, item| {
-        sum + measure::intrinsic(item, fonts) + margin_x(item)
+        sum + measure::intrinsic(item, assets) + margin_x(item)
     });
     content + node.style.gap * gaps(items.len())
 }
@@ -130,10 +130,10 @@ fn gaps(items: usize) -> i32 {
 
 /// Border-box widths of `items` in a row `width` wide.
 #[allow(clippy::cast_precision_loss)]
-fn widths(items: &[&StyledNode], width: i32, gap: i32, fonts: &Fonts) -> Vec<i32> {
+fn widths(items: &[&StyledNode], width: i32, gap: i32, assets: &Assets) -> Vec<i32> {
     let intrinsic: Vec<Intrinsic> = items
         .iter()
-        .map(|item| measure::intrinsic(item, fonts))
+        .map(|item| measure::intrinsic(item, assets))
         .collect();
     let mut sizes: Vec<i32> = items
         .iter()
@@ -260,12 +260,12 @@ fn spacing(justify: Justify, free: i32, n: usize) -> Vec<i32> {
 }
 
 /// Height of an item including its vertical margins.
-fn outer_height(item: &StyledNode, width: i32, fonts: &Fonts) -> i32 {
+fn outer_height(item: &StyledNode, width: i32, assets: &Assets) -> i32 {
     if item.tag().is_none() {
-        return inline::layout(&[item], &item.style, fonts, 0, 0, width, &mut Vec::new()).0;
+        return inline::layout(&[item], &item.style, assets, 0, 0, width, &mut Vec::new()).0;
     }
     let margin = item.style.margin;
-    measure::height(item, width, fonts) + margin.top + margin.bottom
+    measure::height(item, width, assets) + margin.top + margin.bottom
 }
 
 #[cfg(test)]

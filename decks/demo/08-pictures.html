@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+  <title>Pictures</title>
+  <style>
+    body { background: blue; }
+    h2 { color: white; }
+    .row { display: flex; gap: 4; justify-content: center; align-items: end; margin-bottom: 1; }
+    figure { margin: 0; text-align: center; }
+    figure img { margin: 0 auto; }
+    figcaption { color: lightcyan; }
+  </style>
+</head>
+<body>
+  <h2>Pictures</h2>
+  <div class="row">
+    <figure>
+      <img src="img/computer.png" width="32" alt="A PC">
+      <figcaption>pixel art</figcaption>
+    </figure>
+    <figure>
+      <img src="img/sunset.png" width="18" alt="A sunset">
+      <figcaption>16 colors</figcaption>
+    </figure>
+    <figure>
+      <img src="img/sunset.png" width="18" alt="A sunset" style="--dither: ordered">
+      <figcaption>--dither: ordered</figcaption>
+    </figure>
+  </div>
+  <p>
+    <code>&lt;img&gt;</code> shows PNG and GIF files in the 16 EGA colors, two pixels per
+    cell with ▀ and ▄. <code>width</code> and <code>height</code> are in cells; with just
+    one, the picture keeps its shape. Transparent pixels let the slide show through.
+  </p>
+</body>
+</html>
