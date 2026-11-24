@@ -185,6 +185,10 @@ tags act like `span`.
   slide, as in CSS.
 - **Shadows** draw only outside the box, so they never hide the box's own
   content.
+- **Black boxes and black shadows melt together.** A black box (a screen, a
+  terminal) and its shadow read as one dark blob. Give the box a border
+  (`border: single darkgray`), or set it inside a grey panel with a title
+  row, so its edge shows.
 
 ## 7. Placement: flow, flex rows, absolute positioning
 
@@ -295,6 +299,35 @@ A table with `data-chart` is drawn as a chart instead:
   - with one of `width`/`height`, the picture keeps its shape;
   - with neither, one pixel per pixel, shrunk to fit;
   - `margin: 0 auto` centers it.
+- **Pixel art stays sharp only at its own size.** Any other size resamples
+  it, and resampling blends neighbouring pixels into new colors (a white
+  stripe beside a red one turns lightred). So:
+  - set `width` to the picture's width in pixels: one pixel per column;
+  - give the box around it a width too. A flex item or an absolute box
+    without one shrinks to its text and squeezes the picture with it;
+  - draw it an even number of pixels tall. 9 pixels are 4½ rows, so the
+    engine stretches them to 10.
+- **Sizes that read well:** 14 × 14 pixels (14 columns × 7 rows) is enough
+  for a logo like Python's, Rust's or LinkedIn's; a flag fits in 18 × 12.
+- **Drawing pixel art:** write it as a grid of letters, one per pixel, and
+  turn it into a PNG with `scripts/pixelart.py drawing.txt img/name.png`.
+  Lower case is the dark color and upper case the bright one (`b` blue,
+  `B` lightblue, `y` brown, `Y` yellow, `k` black, `K` darkgray, `w`
+  lightgray, `W` white), `.` is transparent. It pads an odd height and prints
+  the `<img>` tag with the right width.
+
+  ```
+  ..rrrr..
+  .rrrrrr.
+  WWWWWWWW
+  WbbWWkkW
+  WbbWWkkW
+  GGGGGGGG
+  ```
+- **Logos:** the logos a deck is about (the speaker's languages, tools,
+  employers, school) work well as small pixel art: keep them flat, with the
+  brand's nearest EGA colors. Don't draw mascot characters (Tux, the
+  Octocat); draw an original icon instead, such as a git branch for GitHub.
 - **Style:** pixel art with flat colors looks best. Photos need
   `--dither: ordered` and still look rough, which can be the charm.
 - **Missing file:** shows `[alt]`.
@@ -304,20 +337,29 @@ A table with `data-chart` is drawn as a chart instead:
 ```html
 <h1>Bakery</h1>                               <!-- block font, 4 rows -->
 <p data-font="small">SECTION TWO</p>          <!-- 3 rows, capitals only -->
-<p data-font="big">GO</p>                     <!-- 7 rows -->
+<p data-font="big">GO</p>                     <!-- 7 rows + 1 blank -->
 <h2 style="--font: block">Also big</h2>
 ```
 
-| Font | Rows | Columns per letter | Letters across 76 columns |
-|---|---|---|---|
-| `small` | 3 | 4 | ~19 |
-| `block` | 4 | 6 | ~12 |
-| `big` | 7 | 12 | ~6 |
+| Font | Rows it takes | Columns per letter, with the gap | Exceptions | Letters across 76 columns |
+|---|---|---|---|---|
+| `small` | 3 | 4 (3 + 1) | M and W 6, N 5 | ~19 |
+| `block` | 4 | 6 (5 + 1) | I 4 | ~12 |
+| `big` | 8 (7 drawn + 1 blank below) | 12 (10 + 2) | I 8 | ~6 |
 
+- **Width of a word:** add up its letters with their gaps, then take off the
+  last gap. `LLM` in `small` is 4 + 4 + 6 − 1 = 13 columns, so it doesn't
+  fit a 12-column box; `AQ` in `big` is 12 + 12 − 2 = 22. A space takes about
+  one letter, and punctuation is narrower; preview a title that comes close
+  to its box.
 - Big text wraps between words and follows `text-align`.
 - It takes colors from inline elements (`<h1>Big <span style="color:yellow">text</span></h1>`).
 - Blank cells between letters show the fill behind.
 - `--font: none` turns an `h1` back into plain text.
+- **A drop shadow under big letters:** a black copy of the title placed
+  behind it, a column or two right and a row down, works with `big`
+  letters. `block` letters are drawn with ▀▄ half blocks, so the copy shows
+  through them in stripes; put a `block` title in a black band instead.
 
 ## 12. Works components (copy-paste)
 

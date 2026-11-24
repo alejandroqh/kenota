@@ -1,6 +1,6 @@
 ---
 name: kenota
-description: Create, edit and check kenota presentations — DOS text-mode slide decks in the look of the 1988 Microsoft Works tutorials (EGA 16 colors, ░▒▓ dithered fields, box-drawing frames, black drop shadows, a PgUp/PgDn footer), written as one HTML file per slide in a deck folder. Use this whenever the user wants slides, a deck, a talk, a lesson or a demo made with kenota, asks for a retro, DOS, ANSI, BBS, EGA or terminal-style presentation, or works in a folder holding a deck.toml or numbered .html slides, even if they never say "kenota". It covers the Works visual style, every supported component, layout balance on the 80×25 grid, builds, transitions and text effects, and a script to see each slide as text.
+description: Create, edit and check kenota presentations — DOS text-mode slide decks in the look of the 1988 Microsoft Works tutorials (EGA 16 colors, ░▒▓ dithered fields, box-drawing frames, black drop shadows, a PgUp/PgDn footer), written as one HTML file per slide in a deck folder. Use this whenever the user wants slides, a deck, a talk, a lesson or a demo made with kenota, asks for a retro, DOS, ANSI, BBS, EGA or terminal-style presentation, or works in a folder holding a deck.toml or numbered .html slides, even if they never say "kenota". It covers the Works visual style, every supported component, layout balance on the 80×25 grid, builds, transitions and text effects, pictures and logos drawn as pixel art, and scripts that show each slide as text or a picture and the whole deck on one sheet, so Claude checks its own slides before handing them over.
 ---
 
 # kenota decks
@@ -42,6 +42,9 @@ describes it in detail.
      (next section). `check` can't see a line that wrapped where you didn't
      want it, or lopsided margins, so never hand over a deck you haven't
      looked at.
+   - Last, look at the whole deck at once with `scripts/sheet.sh <deck>
+     /tmp/sheet.png`: one picture with every slide shows a slide whose
+     margins, colors or rhythm drift from the rest.
 6. **Hand over** with the command to run it: `kenota <deck>` (or
    `cargo run -- <deck>` inside the kenota repository). Keys: PgDn/→/Space
    next step or slide, PgUp/← back, Home/End, q quits. `--slide N` starts at
@@ -77,6 +80,11 @@ open it (your file-reading tool shows images):
 `scripts/preview.sh <deck> 3 --png /tmp/slide-3.png`. Do this for picture
 scenes and anything where colors and shapes matter more than text.
 
+To see every slide in one picture, `scripts/sheet.sh <deck> /tmp/sheet.png`
+tiles them three to a row (`--cols N` changes that; `--step 0` shows how each
+slide first appears). It is the quickest check of a whole deck after a round
+of edits; look at single slides with `preview.sh --png` for detail.
+
 The engine also runs directly: `kenota render <deck> [--slide N]
 [--step N] [--time S] [--colors none|truecolor|ansi16]` prints slides (every
 slide when `--slide` is left out), and `kenota check <deck>` lists
@@ -108,8 +116,12 @@ to run `cargo install kenota`.
   yellow or white for signs and highlights, red sparingly. A slide with more
   than three accent colors starts to look like a ransom note.
 - **Narration:**
-  - plain second person, present tense, task-first ("You run the bakery.
-    Every Friday you send the order. In this lesson you'll…");
+  - plain words, present tense, concrete;
+  - in lessons, demos and tutorials, second person and task-first ("You run
+    the bakery. Every Friday you send the order. In this lesson you'll…");
+  - when speakers present themselves or their own work (an introduction, a
+    portfolio, a project talk), first person ("I build tools for AI agents.
+    Most of them are open source.");
   - 40–50 characters per line, no more than five lines;
   - goes in the top band, or in a panel at the top right of a picture.
 - **Big FIGlet letters only for titles.** Body text stays plain, and there
@@ -135,7 +147,7 @@ The numbers that matter:
 | Default body margin | `1 2 0 2`, so 76 columns from row 1; the starter kit sets `body { margin: 0 }` for full-bleed bands and fields |
 | A box's `width`/`height` | include its border and padding: text width = width − 2 (border) − left/right padding |
 | `box-shadow: 2 1` | 2 extra columns on the right and 1 extra row below, outside the box |
-| Big text | `block` 4 rows × 6 cols/letter (`<h1>`), `small` 3 × 4 (capitals only), `big` 7 × 12 |
+| Big text | `small` 3 rows × 4 cols/letter (capitals only; M and W 6), `block` 4 × 6 (`<h1>`), `big` 8 × 12 (7 drawn + 1 blank); a word is its letters minus the last gap, so `LLM` in `small` is 13 columns |
 | Chart `height` | the whole chart: caption + plot + axis row + labels row + legend (a gap and one row per line of entries); without it the plot alone is 10 rows |
 | Chart plot width | the chart's width − (widest value label + 2); it is split evenly between the categories |
 
@@ -228,6 +240,9 @@ These came up in practice:
 - **Bold brightens.** `font-weight: bold` turns a color into its bright
   version (blue → lightblue, black → darkgray). Dark accent text on grey
   should stay `font-weight: normal`; the kit does this for `b` in panels.
+- **Paragraphs in a kit panel are a row apart:** `.panel p + p` adds a
+  blank row. On cards, where two cards in a row must be the same height,
+  keep lines that belong together in one `<p>` with `<br>`.
 - **Spaces collapse** outside `<pre>`, as in HTML. File listings, screen
   mocks and aligned columns need `<pre>` (the kit's `pre.screen`) or
   `white-space: pre`.
@@ -244,6 +259,21 @@ These came up in practice:
   brown, lightgray, darkgray, lightblue, lightgreen, lightcyan, lightred,
   lightmagenta, yellow, white. Other CSS colors snap to the nearest one,
   sometimes surprisingly.
+- **Pictures blur when scaled.** Give every `<img>` a `width` equal to its
+  width in pixels, give the box around it a width, and draw it an even
+  number of pixels tall. Otherwise the engine resamples it and the colors
+  bleed: a flex item without a width squeezes its picture, and 9 pixels
+  (4½ rows) get stretched to 10. `scripts/pixelart.py` makes pictures that
+  follow these rules (see Pictures in components.md).
+- **Black boxes melt into their shadow.** A black screen or terminal with the
+  black `box-shadow` reads as one dark blob: give it a border
+  (`border: single darkgray`) or set it in a grey panel.
+- **Shadowed titles:** a black copy behind a title works for `big` letters
+  but shows through `block` letters in stripes. Put `block` titles in a
+  black band instead.
+- **Symbols in pictures:** the PNG font (Spleen) lacks some symbols, and ★
+  comes out as `?` in `--png` previews and README pictures even when the
+  terminal shows it. ☼ ♦ • ► ▲ are safe.
 
 ## Files in this skill
 
@@ -268,3 +298,6 @@ These came up in practice:
   grids; `scripts/check.sh` lists a deck's problems; `scripts/engine.sh`
   finds or builds the engine; `scripts/colormap.py` turns colored output
   into grids.
+- `scripts/sheet.sh`: draws every slide of a deck into one PNG.
+- `scripts/pixelart.py`: turns a grid of color letters into a PNG picture in
+  the EGA colors, sized so the engine never scales it.

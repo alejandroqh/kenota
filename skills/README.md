@@ -15,6 +15,8 @@ kenota/
 ├── assets/starter-deck/        Works kit style.css, deck.toml and four example slides
 └── scripts/
     ├── preview.sh              a slide as a numbered text grid or color grids (via `render`)
+    ├── sheet.sh                every slide of a deck in one picture
+    ├── pixelart.py             a grid of color letters into a PNG picture
     ├── check.sh                list a deck's problems (via `check`)
     ├── engine.sh               find the engine, building it from this repository
     └── colormap.py             turn colored output into numbered grids
@@ -39,7 +41,8 @@ ln -s "$PWD/skills/kenota" ~/.claude/skills/kenota
 The scripts find the engine with `engine.sh`: `$KENOTA`, then this
 repository built with cargo (when the skill is here or linked from here),
 then `kenota` on `PATH`, then the repository copy that a plugin install
-brings along, built with cargo. `preview.sh` needs `python3`.
+brings along, built with cargo. `preview.sh`, `sheet.sh` and `pixelart.py`
+need `python3` (nothing beyond its standard library).
 
 The starter deck is checked by `tests/demo_deck.rs`, so engine changes that
 break it fail the tests.

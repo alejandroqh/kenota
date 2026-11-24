@@ -138,6 +138,10 @@ catalogue, and a scene between them resets the eye.
 - **Speak to the viewer:** "you", present tense, concrete. Name a role and a
   goal before a feature: "You run the bakery. Every Friday you send the
   order." beats "This lesson covers spreadsheets."
+- **Unless the talk is about the speaker.** An introduction, a portfolio or
+  a talk about one's own project is told in first person, with the same
+  plain, concrete tone: "I started in IT in Mexico, built mobile apps in
+  Ecuador, then came to Germany for my master's."
 - **Keep it short:**
   - 2–5 lines;
   - 40–50 characters a line in panels, up to about 70 in a band;
@@ -202,11 +206,14 @@ Indoors (desks, offices, a computer):
    to show which is in front.
 7. **Pictures instead:** an `<img>` with a small, flat-colored PNG (pixel
    art at 2 pixels per cell) is the other way to make a scene, good for
-   objects with curves (a computer, a face, a logo).
+   objects with curves (a computer, a face, a logo). Draw it as a grid of
+   letters and convert it with `scripts/pixelart.py`; Pictures in
+   components.md has the rules that keep it sharp.
 
 ## Checklist for a Works-looking slide
 
-- [ ] Narration in a black band or a grey panel; 2–5 short lines; second person.
+- [ ] Narration in a black band or a grey panel; 2–5 short lines; second
+      person (first person when speakers present themselves).
 - [ ] One focal visual; the field shows around it.
 - [ ] Every raised box has the same `box-shadow: 2 1`.
 - [ ] Margins look equal with shadows counted (right = left + 2).
