@@ -28,8 +28,9 @@ ln -s "$PWD/skills/kenota" ~/.claude/skills/kenota
 
 Or, for this repository only, link it into `.claude/skills/` instead. Then ask
 Claude for a deck ("make a kenota deck about…"); the skill loads by
-itself. The scripts build the engine from this repository when run from here,
-or use `$KENOTA` or a `kenota` on `PATH`; `preview.sh` needs `python3`.
+itself. The scripts build the engine from this repository when the skill is
+here or linked from here, or use `$KENOTA` or a `kenota` on `PATH`;
+`preview.sh` needs `python3`.
 
 The starter deck is checked by `tests/demo_deck.rs`, so engine changes that
 break it fail the tests.
