@@ -1,5 +1,6 @@
 //! The bundled decks must pass `kenota check`: the demo deck, the deck the
-//! README pictures come from, and the Claude Code skill's starter deck.
+//! README pictures come from, the README tutorial and the Claude Code
+//! skill's starter deck.
 
 use std::path::Path;
 
@@ -25,4 +26,14 @@ fn readme_deck_has_no_problems() {
 #[test]
 fn skill_starter_deck_has_no_problems() {
     assert_no_problems("skills/kenota/assets/starter-deck");
+}
+
+#[test]
+fn tutorial_deck_has_no_problems_and_matches_the_readme() {
+    assert_no_problems("decks/hello");
+    let slide = include_str!("../decks/hello/01-hello.html");
+    assert!(
+        include_str!("../README.md").contains(slide),
+        "the README tutorial must show decks/hello/01-hello.html as it is"
+    );
 }
