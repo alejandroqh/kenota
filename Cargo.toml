@@ -1,6 +1,6 @@
 [package]
 name = "kenota"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2024"
 description = "Text-mode presentation engine: HTML slides drawn like the 1988 MS Works DOS tutorials"
 license = "Apache-2.0"
